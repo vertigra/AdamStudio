@@ -1,0 +1,31 @@
+<Application x:Class="AdamStudio.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:AdamStudio.ViewModels"
+             xmlns:views="clr-namespace:AdamStudio.Views"
+             ShutdownMode="OnMainWindowClose">
+
+    <Application.Resources>
+        <!-- Глобальные DataTemplates: связывают ViewModel с их View.
+             AvalonDock (и любой другой ItemsControl) автоматически
+             применит этот шаблон, когда встретит EditorTabViewModel
+             в DocumentsSource или PropertiesToolbox в AnchorablesSource. -->
+
+        <DataTemplate DataType="{x:Type vm:EditorTabViewModel}">
+            <views:EditorTabView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:PropertiesToolbox}">
+            <views:PropertiesToolView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:OutputToolbox}">
+            <views:OutputToolView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:MainToolbox}">
+            <views:MainToolView />
+        </DataTemplate>
+        
+    </Application.Resources>
+</Application>

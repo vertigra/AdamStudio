@@ -1,0 +1,28 @@
+<UserControl x:Class="AdamStudio.Views.EditorTabView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Заголовок документа + индикатор несохранённых изменений -->
+        <TextBlock Grid.Row="0"
+                   FontWeight="Bold"
+                   Margin="0,0,0,4"
+                   Text="{Binding Title}"/>
+
+        <!-- Редактор содержимого -->
+        <TextBox Grid.Row="1"
+                 AcceptsReturn="True"
+                 AcceptsTab="True"
+                 VerticalScrollBarVisibility="Auto"
+                 HorizontalScrollBarVisibility="Auto"
+                 TextWrapping="Wrap"
+                 FontFamily="Consolas"
+                 FontSize="14"
+                 Text="{Binding Content, UpdateSourceTrigger=PropertyChanged}" />
+    </Grid>
+</UserControl>

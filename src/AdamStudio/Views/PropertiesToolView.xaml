@@ -1,0 +1,26 @@
+<UserControl x:Class="AdamStudio.Views.PropertiesToolView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Свойства"
+                   FontWeight="Bold"
+                   Margin="0,0,0,8" />
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,4">
+            <TextBlock Text="Выбрано: " />
+            <TextBlock Text="{Binding SelectedObjectName}" FontWeight="DemiBold" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal">
+            <TextBlock Text="Объектов: " />
+            <TextBlock Text="{Binding ObjectCount}" FontWeight="DemiBold" />
+        </StackPanel>
+    </Grid>
+</UserControl>

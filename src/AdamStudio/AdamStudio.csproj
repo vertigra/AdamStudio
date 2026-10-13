@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- AvalonDock v5 — классический DockingManager (ToggleDockingManager не используется) -->
+    <PackageReference Include="Dirkster.AvalonDock" Version="5.0.0" />
+    <PackageReference Include="Dirkster.AvalonDock.Serializer.Xml" Version="5.0.0" />
+
+    <!-- Тема VS2013 (Dark/Light/Blue варианты) -->
+    <PackageReference Include="Dirkster.AvalonDock.Themes.VS2013" Version="5.0.0" />
+
+    <!-- DI-контейнер от Microsoft (.NET 10) -->
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+
+    <!-- MVVM с source generators ([ObservableProperty], [RelayCommand]) -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+
+</Project>
