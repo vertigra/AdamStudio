@@ -44,6 +44,9 @@ public partial class App : Application
                 // Фабрика для создания документов через DI (вместо new EditorTabViewModel())
                 services.AddSingleton<IEditorTabViewModelFactory, EditorTabViewModelFactory>();
 
+                // Сервис по управлению документами
+                services.AddSingleton<IDocumentService, DocumentService>();
+
                 // --- Документы: каждый раз новый экземпляр (transient) ---
                 services.AddTransient<EditorTabViewModel>();
 

@@ -7,8 +7,8 @@ using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Threading;
@@ -28,24 +28,31 @@ namespace AdamStudio.ViewModels;
 /// </summary>
 public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAware
 {
-    private readonly IFileService mFileService;
+    #region Services
+
     private readonly IDialogService mDialogService;
     private readonly IWorkspaceService mWorkspaceService;
-    private readonly IEditorTabViewModelFactory mEditorTabFactory;
+    private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IToolboxService mToolboxService;
     private readonly IDockingManagerProvider mDockingManagerProvider;
     private readonly IDockEventBinder mDockEvent;
     private readonly ILayoutSerializerService mLayoutSerializerService;
     private readonly IThemeService mThemeService;
-    //private int mNewDocCounter;
-    private bool mIsRemovingFromCode;
+    private readonly IDocumentService mDocumentService;
+
+    #endregion
+
+    #region Var
+
+    //private bool mIsRemovingFromCode;
     private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
     private static readonly string WorkspaceFilePath = Path.Combine(AppDataDir, "workspace.json");
     private static readonly string LayoutFilePath   = Path.Combine(AppDataDir, "layout.xml");
     private static readonly string SettingsFilePath = Path.Combine(AppDataDir, "settings.json");
 
+    #endregion
+
     public MainViewModel(
-        IFileService fileService,
         IDialogService dialog,
         IWorkspaceService workspaceService,
         IEditorTabViewModelFactory factory,
@@ -53,17 +60,18 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         IDockingManagerProvider managerProvider,
         IDockEventBinder dockBinder,
         ILayoutSerializerService layoutSerializer,
-        IThemeService themeService)
+        IThemeService themeService,
+        IDocumentService dcumentService)
     {
-        mFileService = fileService;
         mDialogService = dialog;
         mWorkspaceService = workspaceService;
-        mEditorTabFactory = factory;
+        mEditorFactory = factory;
         mToolboxService = toolboxService;
         mDockingManagerProvider = managerProvider;
         mDockEvent = dockBinder;
         mLayoutSerializerService = layoutSerializer;
         mThemeService = themeService;
+        mDocumentService = dcumentService;
 
         // Регистрируем стартовые панели
         mToolboxService.Register<PropertiesToolbox>();
@@ -73,18 +81,33 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mToolboxService.Get<OutputToolbox>()?.AppendLine("Приложение запущено.");
 
         // Подписываемся на события DockingManager через binder.
-        mDockEvent.ActiveContentChanged += OnActiveContentChanged;
-        mDockEvent.DocumentClosing += OnDocumentClosing;
-        mDockEvent.DocumentClosed += OnDocumentClosed;
+        //mDockEvent.ActiveContentChanged += OnActiveContentChanged;
+        //mDockEvent.DocumentClosing += OnDocumentClosing;
+        //mDockEvent.DocumentClosed += OnDocumentClosed;
         mDockEvent.AnchorableClosed += OnAnchorableClosed;
-        mDockEvent.Activate();
+
+        //такое впечатление что это не нужно, тесты
+        //mDockEvent.Activate();
 
         //CreateWelcomeDocument();
         LoadWorkspace();
+
+        mDocumentService.PropertyChanged += OnDocumentServicePropertyChanged;
     }
 
-    /// <summary>Открытые документы (вкладки в центре).</summary>
-    public ObservableCollection<EditorTabViewModel> Documents { get; } = [];
+    public ObservableCollection<EditorTabViewModel> Documents => mDocumentService.Documents;
+    public EditorTabViewModel? ActiveDocument => mDocumentService.ActiveDocument;
+
+    private void OnDocumentServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(IDocumentService.ActiveDocument))
+        {
+            OnPropertyChanged(nameof(ActiveDocument));
+
+            SaveFileCommand.NotifyCanExecuteChanged();
+            CloseDocumentCommand.NotifyCanExecuteChanged();
+        }
+    }
 
     /// <summary>Панели-инструменты — делегируется в IToolboxService.</summary>
     public ObservableCollection<ToolViewModelBase> Anchorables => mToolboxService.Anchorables;
@@ -105,84 +128,24 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             mThemeService.ApplyTheme(value);
     }
 
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveFileCommand))]
-    [NotifyCanExecuteChangedFor(nameof(CloseDocumentCommand))]
-    public partial EditorTabViewModel? ActiveDocument { get; set; }
-
-    // --- Команды ---
+    [RelayCommand]
+    private void OpenNewDocument() => mDocumentService.CreateNew();
 
     [RelayCommand]
-    private void OpenNewDocument()
-    {
-        //mNewDocCounter++;
-
-        EditorTabViewModel doc = mEditorTabFactory.CreateNew($"Документ", $"Содержимое документа.\r\nСоздан: {DateTime.Now:G}");
-        Documents.Add(doc);
-        ActiveDocument = doc;
-
-        Output?.AppendLine($"Открыт документ: {doc.Title}");
-    }
-
-    [RelayCommand]
-    private void OpenFile()
-    {
-        var path = mFileService.ShowOpenDialog();
-        if (path is null) return;
-
-        try
-        {
-            // Если файл уже открыт — активируем существующую вкладку
-            EditorTabViewModel? existing = Documents.FirstOrDefault(d => d.FilePath == path);
-            if (existing != null)
-            {
-                existing.IsActive = true;
-                ActiveDocument = existing;                
-                Output?.AppendLine($"Активирован существующий: {path}");
-                return;
-            }
-
-            EditorTabViewModel tab = mEditorTabFactory.CreateFromFile(path);
-            Documents.Add(tab);
-            ActiveDocument = tab;
-            Output?.AppendLine($"Открыт файл: {path}");
-        }
-        catch (Exception ex)
-        {
-            mDialogService.ShowInformation($"Не удалось открыть файл: {ex.Message}", "Ошибка");
-        }
-    }
+    private void OpenFile() => mDocumentService.OpenFile();
 
     [RelayCommand(CanExecute = nameof(CanSaveOrClose))]
     private void SaveFile()
     {
-        if (ActiveDocument is not { } doc) 
-            return;
-
-        try
-        {
-            if (doc.SaveToFile(suggested => mFileService.ShowSaveDialog(suggested), mFileService.WriteAllText))
-            {
-                Output?.AppendLine($"Сохранён файл: {doc.FilePath}");
-            }
-        }
-        catch (Exception ex)
-        {
-            mDialogService.ShowInformation($"Не удалось сохранить файл: {ex.Message}", "Ошибка");
-        }
+        if (ActiveDocument is { } doc) 
+            mDocumentService.Save(doc);
     }
 
     [RelayCommand(CanExecute = nameof(CanSaveOrClose))]
     private void CloseDocument()
     {
-        if (ActiveDocument is not { } doc) 
-            return;
-
-        if (!ConfirmClose(doc)) 
-            return;
-
-        Documents.Remove(doc);
-        Output?.AppendLine($"Закрыт документ: {doc.Title}");
+        if (ActiveDocument is { } doc) 
+            mDocumentService.Close(doc);
     }
 
     [RelayCommand]
@@ -257,25 +220,22 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     private void OnActiveContentChanged(object? sender, ActiveContentChangedEventArgs e)
     {
-        if (e.NewContent is EditorTabViewModel doc)
-            ActiveDocument = doc;
-
-        else if (e.NewContent is null)
-            ActiveDocument = null;
+        //if (e.NewContent is EditorTabViewModel doc)
+        //    mDocumentService.Activate(doc);
     }
-
+    /* вот это нужно убрать в сервис документов и при закрытии сбрасывать активный документ в null */
     private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e)
     {
-        if (e.Document.Content is not EditorTabViewModel doc) 
-            return;
+        //if (e.Document.Content is not EditorTabViewModel doc) 
+        //    return;
 
-        if (!ConfirmClose(doc))
-            e.Cancel = true;
+        //if (!mDocumentService.ConfirmClose(doc))
+        //    e.Cancel = true;
     }
 
     private void OnDocumentClosed(object? sender, DocumentEventArgs e)
     {
-        if (mIsRemovingFromCode)
+        /*if (mIsRemovingFromCode)
             return;
 
         if (e.Document.Content is EditorTabViewModel doc)
@@ -285,37 +245,18 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
                 mIsRemovingFromCode = true;
 
                 Documents.Remove(doc);
-                Output?.AppendLine($"Документ закрыт пользователем: {doc.Title}");
+                mEditorTabFactory.NewDocCounter--;
 
+                if(Documents.Count == 0)
+                    mDocumentService.ActiveDocument = null;
+
+                Output?.AppendLine($"Документ закрыт пользователем: {doc.Title}");
             }
             finally
             {
                 mIsRemovingFromCode = false;
             }
-        }
-    }
-
-    /// <summary>
-    /// Вызывается из MainWindow.xaml.cs по событию DockingManager.DocumentClosing.
-    /// Возвращает false, чтобы отменить закрытие.
-    /// </summary>
-    public bool ConfirmClose(EditorTabViewModel doc)
-    {
-        if (!doc.IsModified)
-            return true;
-
-        var result = mDialogService.ShowQuestion(
-            $"Сохранить изменения в документе «{doc.Title}»?",
-            "Несохранённые изменения");
-
-        Output?.AppendLine($"Закрытие «{doc.Title}»: выбор = {result}");
-
-        if (result == MessageBoxResult.Yes)
-        {
-            return doc.SaveToFile(suggested => mFileService.ShowSaveDialog(suggested), mFileService.WriteAllText);
-        }
-
-        return result != MessageBoxResult.Cancel;
+        }*/
     }
 
     private void OnAnchorableClosed(object? sender, AnchorableEventArgs e)
@@ -326,8 +267,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             Output?.AppendLine($"Панель скрыта: {tool.Title}");
         }
     }
-
- 
 
     // --- Сериализация рабочего состояния ---
 
@@ -387,7 +326,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         try
         {
             var settings = new AppSettings { ThemeName = CurrentThemeName };
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+            string json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
             Directory.CreateDirectory(AppDataDir);
             File.WriteAllText(SettingsFilePath, json);
         }
@@ -422,7 +361,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     private void CreateWelcomeDocument()
     {
-        var welcome = mEditorTabFactory.CreateNew(
+        var welcome = mEditorFactory.CreateNew(
             "Добро пожаловать",
             "AvalonDock 5 + .NET 10\r\nMVVM + Dependency Injection\r\n\r\n"
                 + "Меню «Файл» → «Новый документ» или «Открыть файл...»\r\n"
@@ -440,7 +379,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
         foreach (var d in state.Documents)
         {
-            EditorTabViewModel doc = mEditorTabFactory.CreateNew(d.Title, d.Content);
+            EditorTabViewModel doc = mEditorFactory.LoadOpen(d.Title, d.Content);
             doc.ContentId = d.ContentId;
             doc.FilePath = d.FilePath ?? string.Empty;
             doc.IsModified = d.IsDirty;
@@ -448,7 +387,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             Documents.Add(doc);
         }
 
-        mEditorTabFactory.NewDocCounter = state.NewDocumentCounter;
+        mDocumentService.NewDocCounter = state.NewDocumentCounter;
         Output?.AppendLine($"Восстановлено документов: {state.Documents.Count}");
     }
 
@@ -456,7 +395,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     {
         var state = new WorkspaceState 
         { 
-            NewDocumentCounter = mEditorTabFactory.NewDocCounter
+            NewDocumentCounter = mDocumentService.NewDocCounter
         };
 
         foreach (var doc in Documents)

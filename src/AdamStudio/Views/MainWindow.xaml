@@ -33,6 +33,7 @@
                     <Setter Property="IsActive" Value="{Binding Model.IsActive, Mode=TwoWay}" />
                 </Style>
             </styles:PanesStyleSelector.ToolboxStyle>
+            
             <styles:PanesStyleSelector.DocumentStyle>
                 <Style TargetType="{x:Type avalonDockControls:LayoutDocumentItem}">
                     <Setter Property="Title" Value="{Binding Model.Title}" />

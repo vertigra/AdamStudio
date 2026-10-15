@@ -1,6 +1,4 @@
 using AdamStudio.EventArguments;
-using AdamStudio.ViewModels;
-using AvalonDock;
 using AvalonDock.Core;
 using AvalonDock.Core.Events;
 using System;
@@ -23,11 +21,11 @@ public interface IDockEventBinder
 
     event EventHandler<ActiveContentChangedEventArgs>? ActiveContentChanged;
     event EventHandler<DocumentCancelEventArgs>? DocumentClosing;
-    event EventHandler<DocumentEventArgs>? DocumentClosed;
+    //event EventHandler<DocumentEventArgs>? DocumentClosed;
     event EventHandler<AnchorableEventArgs>? AnchorableClosed;
 
     /// <summary>Активировать подписку на DockingManager (после его регистрации в IDockingManagerProvider).</summary>
-    void Activate();
+    //void Activate();
 }
 
 public sealed class DockEventBinder : IDockEventBinder
@@ -47,12 +45,12 @@ public sealed class DockEventBinder : IDockEventBinder
         mProvider.ManagerChanged += OnManagerChanged;
     }
 
-    public void Activate()
+    /*public void Activate()
     {
         // Если менеджер уже зарегистрирован — подписываемся сразу.
         // Если нет — подписка произойдёт автоматически при ManagerChanged.
         TrySubscribe(mProvider.Manager);
-    }
+    }*/
 
     private void OnManagerChanged(object? sender, EventArgs e)
     {
@@ -70,7 +68,7 @@ public sealed class DockEventBinder : IDockEventBinder
 
         manager.ActiveContentChanged += OnActiveContentChanged;
         manager.DocumentClosing += OnDocumentClosing;
-        manager.DocumentClosed += OnDocumentClosed;
+        //manager.DocumentClosed += OnDocumentClosed;
         manager.AnchorableClosed += OnAnchorableClosed;
     }
 
@@ -81,7 +79,7 @@ public sealed class DockEventBinder : IDockEventBinder
 
         mDockingManager.ActiveContentChanged -= OnActiveContentChanged;
         mDockingManager.DocumentClosing -= OnDocumentClosing;
-        mDockingManager.DocumentClosed -= OnDocumentClosed;
+        //mDockingManager.DocumentClosed -= OnDocumentClosed;
         mDockingManager.AnchorableClosed -= OnAnchorableClosed;
         mDockingManager = null;
     }
@@ -98,7 +96,7 @@ public sealed class DockEventBinder : IDockEventBinder
 
     private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e) => DocumentClosing?.Invoke(sender, e);
 
-    private void OnDocumentClosed(object? sender, DocumentEventArgs e) => DocumentClosed?.Invoke(sender, e);
+    //private void OnDocumentClosed(object? sender, DocumentEventArgs e) => DocumentClosed?.Invoke(sender, e);
 
     private void OnAnchorableClosed(object? sender, AnchorableEventArgs e) => AnchorableClosed?.Invoke(sender, e);
 }
