@@ -35,14 +35,6 @@ public interface IEditorTabViewModelFactory
 
     /// <summary>Создать документ и загрузить в него содержимое файла.</summary>
     EditorTabViewModel CreateFromFile(string filePath);
-
-    /// <summary>
-    /// Загрузить новый документ с заданным заголовком и содержимым но не сохраненым на диске. 
-    /// Не увеличивает счетчик открытых докуметов 
-    /// </summary>
-    EditorTabViewModel LoadOpen(string title, string content);
-
-    //public  int NewDocCounter {  get; set; }
 }
 
 public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
@@ -54,9 +46,6 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
         mServices = services;
     }
 
-
-    //public int NewDocCounter { get; set; }
-
     public EditorTabViewModel Create()
     {
         // GetRequiredService<EditorTabViewModel>() работает, т.к. EditorTabViewModel
@@ -66,20 +55,8 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
 
     public EditorTabViewModel CreateNew(string title, string content)
     {
-        //NewDocCounter++;
-
         var doc = Create();
         doc.Title = $"{title}";
-        doc.Content = content;
-        doc.IsModified = false;
-        doc.IsActive = true;
-        return doc;
-    }
-
-    public EditorTabViewModel LoadOpen(string title, string content)
-    {
-        var doc = Create();
-        doc.Title = title;
         doc.Content = content;
         doc.IsModified = false;
         doc.IsActive = true;

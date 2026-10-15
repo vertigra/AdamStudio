@@ -33,8 +33,6 @@ namespace AdamStudio.Services
         EditorTabViewModel? OpenFile(string? preselectedPath = null);
         bool Save(EditorTabViewModel doc);
         bool Close(EditorTabViewModel doc);
-        //void Activate(EditorTabViewModel doc);
-        //bool ConfirmClose(EditorTabViewModel doc);
     }
 
     public sealed partial class DocumentService : ObservableObject, IDocumentService
@@ -44,14 +42,8 @@ namespace AdamStudio.Services
         private readonly IEditorTabViewModelFactory mEditorFactory;
         private readonly IFileService mFileService;
         private readonly IDialogService mDialogService;
-        private readonly OutputToolbox mOutputToolbox;
+        private readonly IToolboxService mToolboxService;
         private readonly IDockEventBinder mDockEvent;
-
-        #endregion
-
-        #region Var
-
-        //private bool mIsRemovingFromCode;
 
         #endregion
 
@@ -68,22 +60,23 @@ namespace AdamStudio.Services
 
         #region ~
 
-        public DocumentService(IEditorTabViewModelFactory factory, IFileService fileService, IDialogService dialog, IDockEventBinder dockBinder, OutputToolbox output)
+        public DocumentService(IEditorTabViewModelFactory factory, IFileService fileService, IDialogService dialog, IDockEventBinder dockBinder, IToolboxService toolboxService)
         {
             mEditorFactory = factory;
             mFileService = fileService;
             mDialogService = dialog;
             mDockEvent = dockBinder;
-            mOutputToolbox = output;
+            mToolboxService = toolboxService;
 
             mDockEvent.ActiveContentChanged += OnActiveContentChanged;
             mDockEvent.DocumentClosing += OnDocumentClosing;
-            //mDockEvent.DocumentClosed += OnDocumentClosed;
         }
 
         #endregion
 
         #region Public methods
+
+        public OutputToolbox? Output => mToolboxService.Get<OutputToolbox>();
 
         public EditorTabViewModel CreateNew()
         {
@@ -92,7 +85,7 @@ namespace AdamStudio.Services
             var doc = mEditorFactory.CreateNew($"Документ {NewDocCounter}", $"Содержимое документа №.\r\nСоздан: {DateTime.Now:G}");
             Documents.Add(doc);
             Activate(doc);
-            mOutputToolbox.AppendLine($"Открыт документ: {doc.Title}");
+            Output?.AppendLine($"Открыт документ: {doc.Title}");
             return doc;
         }
 
@@ -108,7 +101,7 @@ namespace AdamStudio.Services
             if (existing != null)
             {
                 Activate(existing);
-                mOutputToolbox.AppendLine($"Активирован существующий: {path}");
+                Output?.AppendLine($"Активирован существующий: {path}");
                 return existing;
             }
 
@@ -117,7 +110,7 @@ namespace AdamStudio.Services
                 var tab = mEditorFactory.CreateFromFile(path);
                 Documents.Add(tab);
                 Activate(tab);
-                mOutputToolbox.AppendLine($"Открыт файл: {path}");
+                Output?.AppendLine($"Открыт файл: {path}");
                 return tab;
             }
             catch (Exception ex)
@@ -133,7 +126,7 @@ namespace AdamStudio.Services
             {
                 if (doc.SaveToFile(suggested => mFileService.ShowSaveDialog(suggested), mFileService.WriteAllText))
                 {
-                    mOutputToolbox.AppendLine($"Сохранён файл: {doc.FilePath}");
+                    Output?.AppendLine($"Сохранён файл: {doc.FilePath}");
                     //понижаем счетчик новых документов
                     NewDocCounter--;
                     return true;
@@ -157,8 +150,8 @@ namespace AdamStudio.Services
             // если закрываемый файл сохранен на диске, счетчик открытых документов понижать не надо
             if(doc.FilePath == string.Empty)
                 NewDocCounter--;
-            
-            mOutputToolbox.AppendLine($"Закрыт документ: {doc.Title}");
+
+            Output?.AppendLine($"Закрыт документ: {doc.Title}");
 
             if (Documents.Count == 0)
             {
@@ -179,7 +172,7 @@ namespace AdamStudio.Services
             //окно сохранения если файл изменен
             var result = mDialogService.ShowQuestion($"Сохранить изменения в документе «{doc.Title}»?", "Несохранённые изменения");
 
-            mOutputToolbox.AppendLine($"Закрытие «{doc.Title}»: выбор = {result}");
+            Output?.AppendLine($"Закрытие «{doc.Title}»: выбор = {result}");
 
             if (result == MessageBoxResult.Yes)
                 return Save(doc);

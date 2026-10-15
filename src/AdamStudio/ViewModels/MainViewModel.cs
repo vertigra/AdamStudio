@@ -35,7 +35,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IToolboxService mToolboxService;
     private readonly IDockingManagerProvider mDockingManagerProvider;
-    private readonly IDockEventBinder mDockEvent;
     private readonly ILayoutSerializerService mLayoutSerializerService;
     private readonly IThemeService mThemeService;
     private readonly IDocumentService mDocumentService;
@@ -43,8 +42,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     #endregion
 
     #region Var
-
-    //private bool mIsRemovingFromCode;
     private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
     private static readonly string WorkspaceFilePath = Path.Combine(AppDataDir, "workspace.json");
     private static readonly string LayoutFilePath   = Path.Combine(AppDataDir, "layout.xml");
@@ -58,7 +55,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         IEditorTabViewModelFactory factory,
         IToolboxService toolboxService,
         IDockingManagerProvider managerProvider,
-        IDockEventBinder dockBinder,
         ILayoutSerializerService layoutSerializer,
         IThemeService themeService,
         IDocumentService dcumentService)
@@ -68,7 +64,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mEditorFactory = factory;
         mToolboxService = toolboxService;
         mDockingManagerProvider = managerProvider;
-        mDockEvent = dockBinder;
         mLayoutSerializerService = layoutSerializer;
         mThemeService = themeService;
         mDocumentService = dcumentService;
@@ -79,15 +74,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mToolboxService.Register<MainToolbox>();
 
         mToolboxService.Get<OutputToolbox>()?.AppendLine("Приложение запущено.");
-
-        // Подписываемся на события DockingManager через binder.
-        //mDockEvent.ActiveContentChanged += OnActiveContentChanged;
-        //mDockEvent.DocumentClosing += OnDocumentClosing;
-        //mDockEvent.DocumentClosed += OnDocumentClosed;
-        mDockEvent.AnchorableClosed += OnAnchorableClosed;
-
-        //такое впечатление что это не нужно, тесты
-        //mDockEvent.Activate();
 
         //CreateWelcomeDocument();
         LoadWorkspace();
@@ -216,58 +202,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         Output?.AppendLine($"Тема изменена: {themeName}");
     }
 
-    // --- Подтверждение закрытия ---
-
-    private void OnActiveContentChanged(object? sender, ActiveContentChangedEventArgs e)
-    {
-        //if (e.NewContent is EditorTabViewModel doc)
-        //    mDocumentService.Activate(doc);
-    }
-    /* вот это нужно убрать в сервис документов и при закрытии сбрасывать активный документ в null */
-    private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e)
-    {
-        //if (e.Document.Content is not EditorTabViewModel doc) 
-        //    return;
-
-        //if (!mDocumentService.ConfirmClose(doc))
-        //    e.Cancel = true;
-    }
-
-    private void OnDocumentClosed(object? sender, DocumentEventArgs e)
-    {
-        /*if (mIsRemovingFromCode)
-            return;
-
-        if (e.Document.Content is EditorTabViewModel doc)
-        {
-            try
-            {
-                mIsRemovingFromCode = true;
-
-                Documents.Remove(doc);
-                mEditorTabFactory.NewDocCounter--;
-
-                if(Documents.Count == 0)
-                    mDocumentService.ActiveDocument = null;
-
-                Output?.AppendLine($"Документ закрыт пользователем: {doc.Title}");
-            }
-            finally
-            {
-                mIsRemovingFromCode = false;
-            }
-        }*/
-    }
-
-    private void OnAnchorableClosed(object? sender, AnchorableEventArgs e)
-    {
-        if (e.Anchorable.Content is ToolViewModelBase tool)
-        {
-            tool.IsOpen = false;
-            Output?.AppendLine($"Панель скрыта: {tool.Title}");
-        }
-    }
-
     // --- Сериализация рабочего состояния ---
 
     /// <summary>Вызывается из App.OnExit — сохраняет список открытых документов.</summary>
@@ -379,7 +313,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
         foreach (var d in state.Documents)
         {
-            EditorTabViewModel doc = mEditorFactory.LoadOpen(d.Title, d.Content);
+            EditorTabViewModel doc = mEditorFactory.CreateNew(d.Title, d.Content);
             doc.ContentId = d.ContentId;
             doc.FilePath = d.FilePath ?? string.Empty;
             doc.IsModified = d.IsDirty;
@@ -400,10 +334,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
         foreach (var doc in Documents)
         {
-            //если документ не сохранен, не храним его состояние
-            //if (string.IsNullOrEmpty(doc.FilePath))
-            //    return;
-
             state.Documents.Add(new WorkspaceDocument
             {
                 ContentId = doc.ContentId,

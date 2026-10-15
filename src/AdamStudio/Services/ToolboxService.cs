@@ -21,11 +21,15 @@ public sealed class ToolboxService : IToolboxService
 {
     private readonly IServiceProvider mServices;
     private readonly IDockingManagerProvider mDockingManagerProvider;
+    private readonly IDockEventBinder mDockEvent;
 
-    public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider)
+    public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider, IDockEventBinder dockBinder)
     {
         mServices = services;
         mDockingManagerProvider = managerProvider;
+        mDockEvent = dockBinder;
+
+        mDockEvent.AnchorableHidden += AnchorableHidden;
     }
 
     public ObservableCollection<ToolViewModelBase> Anchorables { get; } = [];
@@ -114,12 +118,18 @@ public sealed class ToolboxService : IToolboxService
     private LayoutAnchorable? FindLayoutAnchorable(string contentId)
     {
         var manager = mDockingManagerProvider.Manager;
-        if (manager is null) return null;
+        if (manager is null) 
+            return null;
 
         // DockingManager.Layout — это LayoutRoot
         // Ищем среди всех LayoutAnchorable в дереве
         return manager.Layout?.Descendents()
             .OfType<LayoutAnchorable>()
             .FirstOrDefault(a => a.Content is ToolViewModelBase vm && vm.ContentId == contentId);
+    }
+
+    private void AnchorableHidden(object? sender, AvalonDock.Core.Events.AnchorableEventArgs e)
+    {
+        Get<OutputToolbox>()?.AppendLine($"Панель \"{e.Anchorable.Title}\" скрыта");
     }
 }

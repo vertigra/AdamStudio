@@ -13,27 +13,16 @@ namespace AdamStudio.Services;
 /// </summary>
 public interface IDockEventBinder
 {
-    /// <summary>Привязать MainViewModel к событиям DockingManager.</summary>
-    //void Bind(MainViewModel viewModel);
-
-    /// <summary>Отвязать MainViewModel (при закрытии приложения).</summary>
-    //void Unbind();
-
     event EventHandler<ActiveContentChangedEventArgs>? ActiveContentChanged;
     event EventHandler<DocumentCancelEventArgs>? DocumentClosing;
-    //event EventHandler<DocumentEventArgs>? DocumentClosed;
-    event EventHandler<AnchorableEventArgs>? AnchorableClosed;
-
-    /// <summary>Активировать подписку на DockingManager (после его регистрации в IDockingManagerProvider).</summary>
-    //void Activate();
+    event EventHandler<AnchorableEventArgs>? AnchorableHidden;
 }
 
 public sealed class DockEventBinder : IDockEventBinder
 {
     public event EventHandler<ActiveContentChangedEventArgs>? ActiveContentChanged;
     public event EventHandler<DocumentCancelEventArgs>? DocumentClosing;
-    public event EventHandler<DocumentEventArgs>? DocumentClosed;
-    public event EventHandler<AnchorableEventArgs>? AnchorableClosed;
+    public event EventHandler<AnchorableEventArgs>? AnchorableHidden;
 
     private readonly IDockingManagerProvider mProvider;
     private IDockingManager? mDockingManager;
@@ -45,16 +34,8 @@ public sealed class DockEventBinder : IDockEventBinder
         mProvider.ManagerChanged += OnManagerChanged;
     }
 
-    /*public void Activate()
-    {
-        // Если менеджер уже зарегистрирован — подписываемся сразу.
-        // Если нет — подписка произойдёт автоматически при ManagerChanged.
-        TrySubscribe(mProvider.Manager);
-    }*/
-
     private void OnManagerChanged(object? sender, EventArgs e)
     {
-        // Менеджер сменился (например, окно закрылось) — переподписываемся
         Unsubscribe();
         TrySubscribe(mProvider.Manager);
     }
@@ -68,8 +49,7 @@ public sealed class DockEventBinder : IDockEventBinder
 
         manager.ActiveContentChanged += OnActiveContentChanged;
         manager.DocumentClosing += OnDocumentClosing;
-        //manager.DocumentClosed += OnDocumentClosed;
-        manager.AnchorableClosed += OnAnchorableClosed;
+        manager.AnchorableHidden += OnAnchorableHidden;
     }
 
     private void Unsubscribe()
@@ -79,12 +59,9 @@ public sealed class DockEventBinder : IDockEventBinder
 
         mDockingManager.ActiveContentChanged -= OnActiveContentChanged;
         mDockingManager.DocumentClosing -= OnDocumentClosing;
-        //mDockingManager.DocumentClosed -= OnDocumentClosed;
-        mDockingManager.AnchorableClosed -= OnAnchorableClosed;
+        mDockingManager.AnchorableHidden -= OnAnchorableHidden;
         mDockingManager = null;
     }
-
-    // --- Обработчики — делегируют в MainViewModel ---
 
     private void OnActiveContentChanged(object? sender, EventArgs e)
     {
@@ -95,8 +72,5 @@ public sealed class DockEventBinder : IDockEventBinder
     }
 
     private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e) => DocumentClosing?.Invoke(sender, e);
-
-    //private void OnDocumentClosed(object? sender, DocumentEventArgs e) => DocumentClosed?.Invoke(sender, e);
-
-    private void OnAnchorableClosed(object? sender, AnchorableEventArgs e) => AnchorableClosed?.Invoke(sender, e);
+    private void OnAnchorableHidden(object? sender, AnchorableEventArgs e) => AnchorableHidden?.Invoke(sender, e); 
 }
