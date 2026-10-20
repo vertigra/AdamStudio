@@ -16,6 +16,8 @@ public interface IDockEventBinder
     event EventHandler<ActiveContentChangedEventArgs>? ActiveContentChanged;
     event EventHandler<DocumentCancelEventArgs>? DocumentClosing;
     event EventHandler<AnchorableEventArgs>? AnchorableHidden;
+    event EventHandler<AnchorableEventArgs> AnchorableClosed;
+
 }
 
 public sealed class DockEventBinder : IDockEventBinder
@@ -23,7 +25,7 @@ public sealed class DockEventBinder : IDockEventBinder
     public event EventHandler<ActiveContentChangedEventArgs>? ActiveContentChanged;
     public event EventHandler<DocumentCancelEventArgs>? DocumentClosing;
     public event EventHandler<AnchorableEventArgs>? AnchorableHidden;
-
+    public event EventHandler<AnchorableEventArgs> AnchorableClosed;
     private readonly IDockingManagerProvider mProvider;
     private IDockingManager? mDockingManager;
 
@@ -50,6 +52,7 @@ public sealed class DockEventBinder : IDockEventBinder
         manager.ActiveContentChanged += OnActiveContentChanged;
         manager.DocumentClosing += OnDocumentClosing;
         manager.AnchorableHidden += OnAnchorableHidden;
+        manager.AnchorableClosed += OnAnchorableClosed;
     }
 
     private void Unsubscribe()
@@ -72,5 +75,7 @@ public sealed class DockEventBinder : IDockEventBinder
     }
 
     private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e) => DocumentClosing?.Invoke(sender, e);
-    private void OnAnchorableHidden(object? sender, AnchorableEventArgs e) => AnchorableHidden?.Invoke(sender, e); 
+    private void OnAnchorableHidden(object? sender, AnchorableEventArgs e) => AnchorableHidden?.Invoke(sender, e);
+    private void OnAnchorableClosed(object? sender, AnchorableEventArgs e) => AnchorableClosed?.Invoke(sender, e);    
+
 }

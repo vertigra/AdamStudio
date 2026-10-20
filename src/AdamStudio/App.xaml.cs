@@ -1,24 +1,68 @@
-using System.Windows;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using AdamStudio.Extensions;
 using AdamStudio.Services;
 using AdamStudio.ViewModels;
 using AdamStudio.Views;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Core;
+using Serilog.Events;
 using System;
+using System.Collections.ObjectModel;
+using System.Windows;
 
 namespace AdamStudio;
 
 public partial class App : Application
 {
     private readonly IHost mHost;
+    private readonly ObservableCollection<string> mUiLogLines = [];
+
+    /// <summary>
+    /// Переключатель уровня логирования для UI-панели.
+    /// Доступен глобально — можно менять в runtime без перезапуска.
+    /// </summary>
+    public static LoggingLevelSwitch OutputPanelLevelSwitch { get; } = new(LogEventLevel.Information);
 
     public App()
     {
+
+        // 1. Читаем конфигурацию из appsettings.json
+        var configuration = new ConfigurationBuilder()
+            .SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
+
+        // Читаем уровень для UI из конфига (с fallback на Information)
+        var uiLevel = configuration.GetValue("UI:OutputPanel:MinimumLevel", LogEventLevel.Information);
+        OutputPanelLevelSwitch.MinimumLevel = uiLevel;
+
+        // 2. Создаём Serilog logger из конфигурации
+        //    ObservableSink добавляем программно — он ссылается на _uiLogLines
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(configuration)
+            .WriteTo.ObservableSink(mUiLogLines, levelSwitch: OutputPanelLevelSwitch)
+            .CreateLogger();
+
         mHost = Host.CreateDefaultBuilder()
             .ConfigureServices((_, services) =>
             {
-                // --- Сервисы приложения ---
                 services.AddSingleton(sp => sp);
+
+                services.AddSingleton<IConfiguration>(configuration);
+
+                // Serilog.ILogger — глобальный логер
+                services.AddSingleton(_ => Log.Logger);
+
+                // Базовый логер (без контекста) — для тех, кому не нужен SourceContext
+                services.AddSingleton<ILogService>(sp => new LogService(sp.GetRequiredService<ILogger>(), mUiLogLines));
+
+                // Типизированный логер — добавляет SourceContext автоматически
+                services.AddSingleton(typeof(ILogService<>), typeof(LogService<>));
+
+                // --- Сервисы приложения ---
+
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IFileService, FileService>();
                 services.AddSingleton<IWorkspaceService, WorkspaceService>();
@@ -61,11 +105,12 @@ public partial class App : Application
                 // --- Главное окно ---
                 services.AddSingleton<MainWindow>();
             })
+            .UseSerilog()
             .Build();
     }
 
-    public static new App Current => (App)Application.Current;
-    public IServiceProvider Services => mHost.Services;
+    //public static new App Current => (App)Application.Current;
+    //public IServiceProvider Services => mHost.Services;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -84,6 +129,7 @@ public partial class App : Application
 
         await mHost.StopAsync();
         mHost.Dispose();
+        Log.CloseAndFlush();
         base.OnExit(e);
     }
 }

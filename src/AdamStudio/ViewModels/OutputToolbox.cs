@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using AdamStudio.Services;
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -10,20 +11,18 @@ namespace AdamStudio.ViewModels;
 /// </summary>
 public sealed partial class OutputToolbox : ToolViewModelBase
 {
-    public ObservableCollection<string> LogLines { get; } = [];
 
-    [ObservableProperty]
-    private string _outputText = "Готов.\n";
+    #region Services
 
-    public OutputToolbox() : base("Вывод", "OutputTool")
+    private readonly ILogService<OutputToolbox> mLogService;
+
+    #endregion
+
+    public OutputToolbox(ILogService<OutputToolbox> logService) : base("Вывод", "OutputTool")
     {
+        mLogService = logService;
         PreferredSide = AnchorSide.Bottom;
-
     }
 
-    public void AppendLine(string text)
-    {
-        LogLines.Add($"[{DateTime.Now:HH:mm:ss}] {text}");
-        OutputText += $"[{DateTime.Now:HH:mm:ss}] {text}\n";
-    }
+    public ObservableCollection<string> LogLines => mLogService.LogLines;
 }

@@ -19,117 +19,91 @@ public interface IToolboxService
 
 public sealed class ToolboxService : IToolboxService
 {
-    private readonly IServiceProvider mServices;
-    private readonly IDockingManagerProvider mDockingManagerProvider;
-    private readonly IDockEventBinder mDockEvent;
+    private readonly IServiceProvider _services;
+    private readonly IDockingManagerProvider _managerProvider;
 
-    public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider, IDockEventBinder dockBinder)
+    public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider)
     {
-        mServices = services;
-        mDockingManagerProvider = managerProvider;
-        mDockEvent = dockBinder;
-
-        mDockEvent.AnchorableHidden += AnchorableHidden;
+        _services = services;
+        _managerProvider = managerProvider;
     }
 
-    public ObservableCollection<ToolViewModelBase> Anchorables { get; } = [];
+    public ObservableCollection<ToolViewModelBase> Anchorables { get; } = new();
 
     public T Register<T>() where T : ToolViewModelBase
     {
-        var toolbox = mServices.GetRequiredService<T>();
-
+        var toolbox = _services.GetRequiredService<T>();
         if (!Anchorables.Contains(toolbox))
             Anchorables.Add(toolbox);
 
         return toolbox;
     }
 
-    public T? Get<T>() where T : ToolViewModelBase
-    {
-        return Anchorables.OfType<T>().FirstOrDefault();
-    }
+    public T? Get<T>() where T : ToolViewModelBase => Anchorables.OfType<T>().FirstOrDefault();
 
     public void Toggle<T>() where T : ToolViewModelBase
     {
         var toolbox = Get<T>();
         if (toolbox is null)
         {
-            // Панель не зарегистрирована — добавляем в AnchorablesSource.
-            // AvalonDock создаст LayoutAnchorable и покажет её.
-            toolbox = Register<T>();
-            //toolbox.IsOpen = true;
-            return;
-        }
-
-        // Панель есть в коллекции — ищем её LayoutAnchorable в дереве
-        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
-        if (anchorable is null)
-        {
-            // LayoutAnchorable был удалён из дерева (пользователь закрыл крестиком)
-            // Удаляем VM из Anchorables и регистрируем заново —
-            // AvalonDock создаст новый LayoutAnchorable
-            Anchorables.Remove(toolbox);
+            // Нет в коллекции — добавляем (AvalonDock создаст и покажет)
             Register<T>();
-            toolbox.IsOpen = !toolbox.IsOpen;
             return;
         }
 
-        // Управляем видимостью через Show()/Hide() — сохраняет позицию панели
-        if (anchorable.IsHidden)
-        {
-            anchorable.Show();
-            toolbox.IsOpen = true;
-        }
+        // Есть в коллекции — переключаем видимость
+        if (toolbox.IsHidden)
+            ShowInternal(toolbox);
         else
-        {
-            anchorable.Hide();
-            toolbox.IsOpen = false;
-        }
+            HideInternal(toolbox);
     }
 
     public void Show<T>() where T : ToolViewModelBase
     {
         var toolbox = Get<T>() ?? Register<T>();
-        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
-        if (anchorable != null)
-        {
-            anchorable.Show();
-            toolbox.IsOpen = true;
-        }
+        ShowInternal(toolbox);
     }
 
     public void Hide<T>() where T : ToolViewModelBase
     {
         var toolbox = Get<T>();
-        if (toolbox is null) return;
-        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
-
-        if (anchorable != null)
-        {
-            anchorable.Hide();
-            toolbox.IsOpen = false;
-        }
+        
+        if (toolbox is null) 
+            return;
+        HideInternal(toolbox);
     }
 
-    /// <summary>
-    /// Найти LayoutAnchorable в дереве layout по ContentId.
-    /// LayoutAnchorable.Content хранит нашу VM, у VM есть ContentId.
-    /// </summary>
+    // --- Внутренняя логика ---
+
+    private void ShowInternal(ToolViewModelBase toolbox)
+    {
+        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
+        if (anchorable != null && anchorable.IsHidden)
+        {
+            // Скрыта — показываем (появится там же, где была)
+            anchorable.Show();
+        }
+        toolbox.IsHidden = false;
+        toolbox.IsActive = true;
+    }
+
+    private void HideInternal(ToolViewModelBase toolbox)
+    {
+        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
+        if (anchorable != null && !anchorable.IsHidden)
+        {
+            anchorable.Hide();
+        }
+        toolbox.IsHidden = true;
+    }
+
     private LayoutAnchorable? FindLayoutAnchorable(string contentId)
     {
-        var manager = mDockingManagerProvider.Manager;
-        if (manager is null) 
-            return null;
+        var manager = _managerProvider.Manager;
+        if (manager is null) return null;
 
-        // DockingManager.Layout — это LayoutRoot
-        // Ищем среди всех LayoutAnchorable в дереве
         return manager.Layout?.Descendents()
             .OfType<LayoutAnchorable>()
             .FirstOrDefault(a => a.Content is ToolViewModelBase vm && vm.ContentId == contentId);
-    }
-
-    private void AnchorableHidden(object? sender, AvalonDock.Core.Events.AnchorableEventArgs e)
-    {
-        Get<OutputToolbox>()?.AppendLine($"Панель \"{e.Anchorable.Title}\" скрыта");
     }
 }

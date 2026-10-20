@@ -42,8 +42,8 @@ namespace AdamStudio.Services
         private readonly IEditorTabViewModelFactory mEditorFactory;
         private readonly IFileService mFileService;
         private readonly IDialogService mDialogService;
-        private readonly IToolboxService mToolboxService;
         private readonly IDockEventBinder mDockEvent;
+        private readonly ILogService<DocumentService> mLogService;
 
         #endregion
 
@@ -60,14 +60,14 @@ namespace AdamStudio.Services
 
         #region ~
 
-        public DocumentService(IEditorTabViewModelFactory factory, IFileService fileService, IDialogService dialog, IDockEventBinder dockBinder, IToolboxService toolboxService)
+        public DocumentService(IEditorTabViewModelFactory factory, IFileService fileService, IDialogService dialog, IDockEventBinder dockBinder, ILogService<DocumentService> logService)
         {
             mEditorFactory = factory;
             mFileService = fileService;
             mDialogService = dialog;
             mDockEvent = dockBinder;
-            mToolboxService = toolboxService;
-
+            mLogService = logService;
+            
             mDockEvent.ActiveContentChanged += OnActiveContentChanged;
             mDockEvent.DocumentClosing += OnDocumentClosing;
         }
@@ -76,8 +76,6 @@ namespace AdamStudio.Services
 
         #region Public methods
 
-        public OutputToolbox? Output => mToolboxService.Get<OutputToolbox>();
-
         public EditorTabViewModel CreateNew()
         {
             NewDocCounter++;
@@ -85,7 +83,7 @@ namespace AdamStudio.Services
             var doc = mEditorFactory.CreateNew($"Документ {NewDocCounter}", $"Содержимое документа №.\r\nСоздан: {DateTime.Now:G}");
             Documents.Add(doc);
             Activate(doc);
-            Output?.AppendLine($"Открыт документ: {doc.Title}");
+            mLogService.LogInformation($"Открыт документ: {doc.Title}");
             return doc;
         }
 
@@ -101,7 +99,7 @@ namespace AdamStudio.Services
             if (existing != null)
             {
                 Activate(existing);
-                Output?.AppendLine($"Активирован существующий: {path}");
+                mLogService.LogInformation($"Активирован существующий: {path}");
                 return existing;
             }
 
@@ -110,11 +108,12 @@ namespace AdamStudio.Services
                 var tab = mEditorFactory.CreateFromFile(path);
                 Documents.Add(tab);
                 Activate(tab);
-                Output?.AppendLine($"Открыт файл: {path}");
+                mLogService.LogInformation($"Открыт файл: {path}");
                 return tab;
             }
             catch (Exception ex)
             {
+                mLogService.LogError("Не удалось открыть файл", ex);
                 mDialogService.ShowInformation($"Не удалось открыть файл: {ex.Message}", "Ошибка");
                 return null;
             }
@@ -126,8 +125,7 @@ namespace AdamStudio.Services
             {
                 if (doc.SaveToFile(suggested => mFileService.ShowSaveDialog(suggested), mFileService.WriteAllText))
                 {
-                    Output?.AppendLine($"Сохранён файл: {doc.FilePath}");
-                    //понижаем счетчик новых документов
+                    mLogService.LogInformation($"Сохранён файл: {doc.FilePath}");
                     NewDocCounter--;
                     return true;
                 }
@@ -151,7 +149,7 @@ namespace AdamStudio.Services
             if(doc.FilePath == string.Empty)
                 NewDocCounter--;
 
-            Output?.AppendLine($"Закрыт документ: {doc.Title}");
+            mLogService.LogInformation($"Закрыт документ: {doc.Title}");
 
             if (Documents.Count == 0)
             {
@@ -172,7 +170,7 @@ namespace AdamStudio.Services
             //окно сохранения если файл изменен
             var result = mDialogService.ShowQuestion($"Сохранить изменения в документе «{doc.Title}»?", "Несохранённые изменения");
 
-            Output?.AppendLine($"Закрытие «{doc.Title}»: выбор = {result}");
+            mLogService.LogInformation($"Закрытие «{doc.Title}»: выбор = {result}");
 
             if (result == MessageBoxResult.Yes)
                 return Save(doc);

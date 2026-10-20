@@ -4,6 +4,7 @@ using AdamStudio.Services;
 using AvalonDock.Core.Events;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,7 +31,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 {
     #region Services
 
-    private readonly IDialogService mDialogService;
     private readonly IWorkspaceService mWorkspaceService;
     private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IToolboxService mToolboxService;
@@ -38,6 +38,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private readonly ILayoutSerializerService mLayoutSerializerService;
     private readonly IThemeService mThemeService;
     private readonly IDocumentService mDocumentService;
+    private readonly ILogService<MainViewModel> mLogService;
 
     #endregion
 
@@ -50,16 +51,16 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     #endregion
 
     public MainViewModel(
-        IDialogService dialog,
         IWorkspaceService workspaceService,
         IEditorTabViewModelFactory factory,
         IToolboxService toolboxService,
         IDockingManagerProvider managerProvider,
         ILayoutSerializerService layoutSerializer,
         IThemeService themeService,
-        IDocumentService dcumentService)
+        IDocumentService dcumentService,
+        ILogService<MainViewModel> logService,
+        IDockEventBinder dockEventBinder)
     {
-        mDialogService = dialog;
         mWorkspaceService = workspaceService;
         mEditorFactory = factory;
         mToolboxService = toolboxService;
@@ -67,19 +68,31 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mLayoutSerializerService = layoutSerializer;
         mThemeService = themeService;
         mDocumentService = dcumentService;
+        mLogService = logService;
 
         // Регистрируем стартовые панели
         mToolboxService.Register<PropertiesToolbox>();
         mToolboxService.Register<OutputToolbox>();
         mToolboxService.Register<MainToolbox>();
 
-        mToolboxService.Get<OutputToolbox>()?.AppendLine("Приложение запущено.");
+        mLogService.LogInformation("Приложение запущено.");
 
         //CreateWelcomeDocument();
         LoadWorkspace();
 
         mDocumentService.PropertyChanged += OnDocumentServicePropertyChanged;
+        //dockEventBinder.AnchorableHidden += DockEventBinder_AnchorableHidden;
     }
+
+    private void DockEventBinder_AnchorableHidden(object? sender, AnchorableEventArgs e)
+    {
+        if (e.Anchorable.Content is ToolViewModelBase tool)
+        {
+            var s = 5;
+            //tool.IsHidden = true;
+        }
+    }
+
 
     public ObservableCollection<EditorTabViewModel> Documents => mDocumentService.Documents;
     public EditorTabViewModel? ActiveDocument => mDocumentService.ActiveDocument;
@@ -97,9 +110,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     /// <summary>Панели-инструменты — делегируется в IToolboxService.</summary>
     public ObservableCollection<ToolViewModelBase> Anchorables => mToolboxService.Anchorables;
-
-    /// <summary>Доступ к панели «Вывод» (для логирования из code-behind).</summary>
-    public OutputToolbox? Output => mToolboxService.Get<OutputToolbox>();
 
     /// <summary>Список доступных тем для меню «Вид → Темы».</summary>
     public IReadOnlyList<ThemeInfo> AvailableThemes => mThemeService.AvailableThemes;
@@ -134,6 +144,8 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             mDocumentService.Close(doc);
     }
 
+    private bool CanSaveOrClose() => ActiveDocument is not null;
+
     [RelayCommand]
     private void ToggleProperties() => mToolboxService.Toggle<PropertiesToolbox>();
 
@@ -146,51 +158,49 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     [RelayCommand]
     private void Exit() => Application.Current.Shutdown();
 
-    [RelayCommand]
-    private void SaveLayout()
+    private void RestoreLayout()
     {
         var manager = mDockingManagerProvider.Manager;
+        
         if (manager is null)
         {
-            Output?.AppendLine("DockingManager не загружен — сохранение невозможно.");
+            mLogService.LogWarning("DockingManager не загружен — восстановление невозможно.");
             return;
         }
 
-        try
+        if (!File.Exists(LayoutFilePath))
         {
-            mLayoutSerializerService.Serialize(manager, LayoutFilePath);
-            Output?.AppendLine($"Layout сохранён: {LayoutFilePath}");
-        }
-        catch (Exception ex)
-        {
-            mDialogService.ShowInformation($"Ошибка сохранения layout: {ex.Message}", "Ошибка");
-        }
-    }
-
-    [RelayCommand]
-    private void LoadLayout()
-    {
-        var manager = mDockingManagerProvider.Manager;
-        if (manager is null)
-        {
-            Output?.AppendLine("DockingManager не загружен — восстановление невозможно.");
+            mLogService.LogWarning($"Файл layout не найден — расположение по умолчанию: {LayoutFilePath}");
             return;
         }
 
-        try
-        {
-            if (mLayoutSerializerService.Deserialize(manager, LayoutFilePath))
-                Output?.AppendLine($"Layout восстановлен: {LayoutFilePath}");
-            else
-                Output?.AppendLine("Файл layout не найден — расположение по умолчанию.");
-        }
-        catch (Exception ex)
-        {
-            mDialogService.ShowInformation($"Ошибка загрузки layout: {ex.Message}", "Ошибка");
-        }
+        if (mLayoutSerializerService.Deserialize(manager, LayoutFilePath))
+            mLogService.LogInformation($"Layout восстановлен: {LayoutFilePath}");
+        else
+            mLogService.LogWarning("Не удалось восстановить layout.");
     }
 
-    private bool CanSaveOrClose() => ActiveDocument is not null;
+    private void LoadWorkspace()
+    {
+        WorkspaceState state = mWorkspaceService.Load(WorkspaceFilePath);
+
+        if (state.Documents.Count == 0)
+            return;
+
+        foreach (var d in state.Documents)
+        {
+            EditorTabViewModel doc = mEditorFactory.CreateNew(d.Title, d.Content);
+            doc.ContentId = d.ContentId;
+            doc.FilePath = d.FilePath ?? string.Empty;
+            doc.IsModified = d.IsDirty;
+
+            Documents.Add(doc);
+        }
+
+        mDocumentService.NewDocCounter = state.NewDocumentCounter;
+        mLogService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
+    }
+
 
     [RelayCommand]
     private void SetTheme(string? themeName)
@@ -199,7 +209,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             return;
 
         CurrentThemeName = themeName;
-        Output?.AppendLine($"Тема изменена: {themeName}");
+        mLogService.LogInformation($"Тема изменена: {themeName}");
     }
 
     // --- Сериализация рабочего состояния ---
@@ -212,29 +222,17 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         Application.Current?.Dispatcher.BeginInvoke(DispatcherPriority.Loaded, () =>
             {
                 try { RestoreLayout(); }
-                catch (Exception ex) { Output?.AppendLine($"Ошибка восстановления layout: {ex.Message}"); }
+                catch (Exception ex) 
+                {
+                    mLogService.LogError("Ошибка восстановления layout при загрузке", ex);
+                }
             });
 
         // Восстанавливаем настройки (тему) — менеджер уже зарегистрирован
         LoadSettings();
     }
 
-    private void RestoreLayout()
-    {
-        var manager = mDockingManagerProvider.Manager;
-        if (manager is null) return;
 
-        if (!File.Exists(LayoutFilePath))
-        {
-            Output?.AppendLine("Файл layout не найден — расположение по умолчанию.");
-            return;
-        }
-
-        if (mLayoutSerializerService.Deserialize(manager, LayoutFilePath))
-            Output?.AppendLine($"Layout восстановлен: {LayoutFilePath}");
-        else
-            Output?.AppendLine("Не удалось восстановить layout.");
-    }
 
     private void LoadSettings()
     {
@@ -249,7 +247,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             if (settings?.ThemeName is { } theme)
             {
                 CurrentThemeName = theme;
-                Output?.AppendLine($"Тема восстановлена: {theme}");
+                mLogService.LogInformation($"Тема восстановлена: {theme}");
             }
         }
         catch { /* best-effort */ }
@@ -279,6 +277,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         try
         {
             var manager = mDockingManagerProvider.Manager;
+
             if (manager is null)
                 return;
             
@@ -293,7 +292,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         catch { }
     }
 
-    private void CreateWelcomeDocument()
+    /*private void CreateWelcomeDocument()
     {
         var welcome = mEditorFactory.CreateNew(
             "Добро пожаловать",
@@ -301,29 +300,8 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
                 + "Меню «Файл» → «Новый документ» или «Открыть файл...»\r\n"
                 + "Переключение панелей: меню «Вид» или заголовки панелей");
         welcome.ContentId = "welcome";
-        Documents.Add(welcome);
-    }
-
-    private void LoadWorkspace()
-    {
-        WorkspaceState state = mWorkspaceService.Load(WorkspaceFilePath);
-
-        if (state.Documents.Count == 0) 
-            return;
-
-        foreach (var d in state.Documents)
-        {
-            EditorTabViewModel doc = mEditorFactory.CreateNew(d.Title, d.Content);
-            doc.ContentId = d.ContentId;
-            doc.FilePath = d.FilePath ?? string.Empty;
-            doc.IsModified = d.IsDirty;
-
-            Documents.Add(doc);
-        }
-
-        mDocumentService.NewDocCounter = state.NewDocumentCounter;
-        Output?.AppendLine($"Восстановлено документов: {state.Documents.Count}");
-    }
+        Documents.Add(welcome);*/
+    //}
 
     private void SaveWorkspace()
     {

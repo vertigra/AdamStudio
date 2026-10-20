@@ -1,7 +1,6 @@
 ﻿using AdamStudio.Services;
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.Input;
-using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
