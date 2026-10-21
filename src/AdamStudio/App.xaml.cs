@@ -57,10 +57,11 @@ public partial class App : Application
 
                 // Базовый логер (без контекста) — для тех, кому не нужен SourceContext
                 services.AddSingleton<ILogService>(sp => new LogService(sp.GetRequiredService<ILogger>(), mUiLogLines));
-
+   
                 // Типизированный логер — добавляет SourceContext автоматически
                 services.AddSingleton(typeof(ILogService<>), typeof(LogService<>));
 
+                services.AddSingleton<IAppPersistenceService, AppPersistenceService>();
                 // --- Сервисы приложения ---
 
                 services.AddSingleton<IDialogService, DialogService>();
