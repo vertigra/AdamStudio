@@ -7,15 +7,9 @@ using System.Windows.Controls;
 namespace AdamStudio.Docking
 {
     /// <summary>
-    /// Стратегия размещения новых панелей (LayoutAnchorable) в классическом DockingManager.
-    /// Используется через &lt;DockingManager.LayoutUpdateStrategy&gt; в XAML.
-    ///
-    /// Логика:
-    /// 1. Ищем существующую ОТКРЫТУЮ панель на нужной стороне (Right/Left/Bottom/Top).
-    ///    Если нашли — добавляем anchorable туда (как новую вкладку).
-    /// 2. Если не нашли — создаём новую LayoutAnchorablePane на нужной стороне
-    ///    и помещаем anchorable в неё. Это исправляет баг, когда после закрытия
-    ///    панели крестиком новая панель добавлялась «не пойми куда».
+    /// Стратегия размещения новых панелей при добавлении в AnchorablesSource.
+    /// Используется ТОЛЬКО для первичного позиционирования (при старте или первой регистрации).
+    /// Для Show/Hide во время работы используется ToolboxService.
     /// </summary>
     public sealed class LayoutUpdateStrategy : ILayoutUpdateStrategy
     {
@@ -29,19 +23,18 @@ namespace AdamStudio.Docking
             if (anchorable.Content is not ToolViewModelBase tool)
                 return false;
 
-            // 1. Ищем существующую ОТКРЫТУЮ панель на нужной стороне
+            // Ищем существующую ОТКРЫТУЮ pane на нужной стороне
             var existingPane = layout.Descendents()
                 .OfType<LayoutAnchorablePane>()
                 .FirstOrDefault(p => GetSide(p) == tool.PreferredSide && p.ChildrenCount > 0);
 
-            if (existingPane != null)
+            /*if (existingPane != null)
             {
                 existingPane.Children.Add(anchorable);
-                anchorable.IsActive = true;
                 return true;
-            }
+            }*/
 
-            // 2. Не нашли — создаём новую LayoutAnchorablePane на нужной стороне
+            // Не нашли — создаём новую на нужной стороне
             return tool.PreferredSide switch
             {
                 AnchorSide.Right => CreateSidePane(layout, anchorable, AnchorSide.Right),
@@ -57,7 +50,42 @@ namespace AdamStudio.Docking
         public bool InsertAnchorable(LayoutRoot layout, LayoutAnchorable anchorable, ILayoutContainer destinationContainer)
             => BeforeInsertAnchorable(layout, anchorable, destinationContainer);
 
-        // --- Создание нижней панели ---
+        // --- Создание панелей ---
+
+        private static bool CreateSidePane(LayoutRoot layout, LayoutAnchorable anchorable, AnchorSide side)
+        {
+            var newPane = new LayoutAnchorablePane(anchorable)
+            {
+                DockWidth = new GridLength(260, GridUnitType.Pixel)
+            };
+
+            var rootPanel = layout.RootPanel;
+
+            if (rootPanel.Orientation == Orientation.Horizontal)
+            {
+                if (side == AnchorSide.Right)
+                    rootPanel.Children.Add(newPane);
+                else
+                    rootPanel.Children.Insert(0, newPane);
+            }
+            else
+            {
+                var horizontalPanel = new LayoutPanel { Orientation = Orientation.Horizontal };
+                if (side == AnchorSide.Right)
+                {
+                    horizontalPanel.Children.Add(rootPanel);
+                    horizontalPanel.Children.Add(newPane);
+                }
+                else
+                {
+                    horizontalPanel.Children.Add(newPane);
+                    horizontalPanel.Children.Add(rootPanel);
+                }
+                layout.RootPanel = horizontalPanel;
+            }
+
+            return true;
+        }
 
         private static bool CreateBottomPane(LayoutRoot layout, LayoutAnchorable anchorable)
         {
@@ -65,26 +93,15 @@ namespace AdamStudio.Docking
             {
                 DockHeight = new GridLength(180, GridUnitType.Pixel)
             };
-            anchorable.IsActive = true;
 
             var rootPanel = layout.RootPanel;
 
             if (rootPanel.Orientation == Orientation.Vertical)
             {
-                // Root уже вертикальный — просто добавляем снизу
                 rootPanel.Children.Add(newPane);
             }
             else
             {
-                // Root горизонтальный — оборачиваем его в новый вертикальный LayoutPanel:
-                //   LayoutRoot.RootPanel = verticalPanel
-                //     ├── [старый rootPanel]
-                //     └── newPane (bottom)
-                //
-                // ВАЖНО: используем layout.RootPanel = ... (сеттер),
-                // а не parent.Children.Remove/Insert — потому что у корневого
-                // LayoutPanel родитель — это LayoutRoot, и через LayoutGroup<>
-                // манипулировать им нельзя (что и приводило к «пропаданию» панелей).
                 var verticalPanel = new LayoutPanel { Orientation = Orientation.Vertical };
                 verticalPanel.Children.Add(rootPanel);
                 verticalPanel.Children.Add(newPane);
@@ -94,15 +111,12 @@ namespace AdamStudio.Docking
             return true;
         }
 
-        // --- Создание верхней панели ---
-
         private static bool CreateTopPane(LayoutRoot layout, LayoutAnchorable anchorable)
         {
             var newPane = new LayoutAnchorablePane(anchorable)
             {
                 DockHeight = new GridLength(180, GridUnitType.Pixel)
             };
-            anchorable.IsActive = true;
 
             var rootPanel = layout.RootPanel;
 
@@ -120,48 +134,6 @@ namespace AdamStudio.Docking
 
             return true;
         }
-
-        // --- Создание боковой панели (Left/Right) ---
-
-        private static bool CreateSidePane(LayoutRoot layout, LayoutAnchorable anchorable, AnchorSide side)
-        {
-            var newPane = new LayoutAnchorablePane(anchorable)
-            {
-                DockWidth = new GridLength(260, GridUnitType.Pixel)
-            };
-            anchorable.IsActive = true;
-
-            var rootPanel = layout.RootPanel;
-
-            if (rootPanel.Orientation == Orientation.Horizontal)
-            {
-                // Root уже горизонтальный — просто добавляем слева/справа
-                if (side == AnchorSide.Right)
-                    rootPanel.Children.Add(newPane);
-                else
-                    rootPanel.Children.Insert(0, newPane);
-            }
-            else
-            {
-                // Root вертикальный — оборачиваем в горизонтальный LayoutPanel
-                var horizontalPanel = new LayoutPanel { Orientation = Orientation.Horizontal };
-                if (side == AnchorSide.Right)
-                {
-                    horizontalPanel.Children.Add(rootPanel);
-                    horizontalPanel.Children.Add(newPane);
-                }
-                else // Left
-                {
-                    horizontalPanel.Children.Add(newPane);
-                    horizontalPanel.Children.Add(rootPanel);
-                }
-                layout.RootPanel = horizontalPanel;
-            }
-
-            return true;
-        }
-
-        // --- Определение стороны панели ---
 
         private static AnchorSide GetSide(LayoutAnchorablePane pane)
         {

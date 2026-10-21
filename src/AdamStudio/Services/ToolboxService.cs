@@ -2,6 +2,7 @@ using AdamStudio.ViewModels;
 using AvalonDock.Layout;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -15,12 +16,14 @@ public interface IToolboxService
     void Toggle<T>() where T : ToolViewModelBase;
     void Show<T>() where T : ToolViewModelBase;
     void Hide<T>() where T : ToolViewModelBase;
+    void UpdateLastPositions();
 }
 
 public sealed class ToolboxService : IToolboxService
 {
     private readonly IServiceProvider _services;
     private readonly IDockingManagerProvider _managerProvider;
+    private readonly Dictionary<string, LayoutAnchorablePane> _lastPanes = [];
 
     public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider)
     {
@@ -28,14 +31,13 @@ public sealed class ToolboxService : IToolboxService
         _managerProvider = managerProvider;
     }
 
-    public ObservableCollection<ToolViewModelBase> Anchorables { get; } = new();
+    public ObservableCollection<ToolViewModelBase> Anchorables { get; } = [];
 
     public T Register<T>() where T : ToolViewModelBase
     {
         var toolbox = _services.GetRequiredService<T>();
         if (!Anchorables.Contains(toolbox))
             Anchorables.Add(toolbox);
-
         return toolbox;
     }
 
@@ -51,50 +53,81 @@ public sealed class ToolboxService : IToolboxService
             return;
         }
 
-        // Есть в коллекции — переключаем видимость
-        if (toolbox.IsHidden)
-            ShowInternal(toolbox);
+        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
+        if (anchorable is null) 
+            return;
+
+        // Читаем состояние напрямую из AvalonDock (источник истины)
+        if (anchorable.IsHidden)
+            ShowInternal(toolbox, anchorable);
         else
-            HideInternal(toolbox);
+            HideInternal(toolbox, anchorable);
     }
 
     public void Show<T>() where T : ToolViewModelBase
     {
         var toolbox = Get<T>() ?? Register<T>();
-        ShowInternal(toolbox);
+        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
+
+        if (anchorable != null)
+            ShowInternal(toolbox, anchorable);
     }
 
     public void Hide<T>() where T : ToolViewModelBase
     {
         var toolbox = Get<T>();
-        
         if (toolbox is null) 
             return;
-        HideInternal(toolbox);
+
+        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
+
+        if (anchorable != null) 
+            HideInternal(toolbox, anchorable);
     }
 
-    // --- Внутренняя логика ---
-
-    private void ShowInternal(ToolViewModelBase toolbox)
+    /// <summary>
+    /// Запомнить текущие позиции всех открытых панелей.
+    /// Вызывать при событии LayoutChanged (после любого перемещения панелей).
+    /// </summary>
+    public void UpdateLastPositions()
     {
-        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
-        if (anchorable != null && anchorable.IsHidden)
+        foreach (var toolbox in Anchorables)
         {
-            // Скрыта — показываем (появится там же, где была)
-            anchorable.Show();
+            var anchorable = FindLayoutAnchorable(toolbox.ContentId);
+            if (anchorable?.Parent is LayoutAnchorablePane pane && pane.Root != null)
+            {
+                _lastPanes[toolbox.ContentId] = pane;
+            }
         }
-        toolbox.IsHidden = false;
-        toolbox.IsActive = true;
     }
 
-    private void HideInternal(ToolViewModelBase toolbox)
+
+    private void ShowInternal(ToolViewModelBase toolbox, LayoutAnchorable anchorable)
     {
-        var anchorable = FindLayoutAnchorable(toolbox.ContentId);
-        if (anchorable != null && !anchorable.IsHidden)
+        // Сбрасываем PreviousContainer — не доверяем ему
+        if (anchorable is ILayoutPreviousContainer prev)
+            prev.PreviousContainer = null;
+
+        // Если есть запомненная pane и она жива (в дереве) — добавляем туда
+        if (_lastPanes.TryGetValue(toolbox.ContentId, out var pane) && pane.Root != null)
         {
-            anchorable.Hide();
+            if (anchorable.Parent is LayoutAnchorablePane oldParent)
+                oldParent.Children.Remove(anchorable);
+
+            pane.Children.Add(anchorable);
         }
-        toolbox.IsHidden = true;
+
+        anchorable.Show();
+        anchorable.IsActive = true;
+    }
+
+    private void HideInternal(ToolViewModelBase toolbox, LayoutAnchorable anchorable)
+    {
+        // Перед скрытием запоминаем текущую pane
+        if (anchorable.Parent is LayoutAnchorablePane pane && pane.Root != null)
+            _lastPanes[toolbox.ContentId] = pane;
+
+        anchorable.Hide();
     }
 
     private LayoutAnchorable? FindLayoutAnchorable(string contentId)

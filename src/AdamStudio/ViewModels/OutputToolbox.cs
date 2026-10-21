@@ -1,8 +1,6 @@
-using System;
-using System.Collections.ObjectModel;
 using AdamStudio.Services;
 using AvalonDock.Layout;
-using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.ObjectModel;
 
 namespace AdamStudio.ViewModels;
 
@@ -21,7 +19,7 @@ public sealed partial class OutputToolbox : ToolViewModelBase
     public OutputToolbox(ILogService<OutputToolbox> logService) : base("Вывод", "OutputTool")
     {
         mLogService = logService;
-        PreferredSide = AnchorSide.Bottom;
+        PreferredSide = AnchorSide.Right;
     }
 
     public ObservableCollection<string> LogLines => mLogService.LogLines;

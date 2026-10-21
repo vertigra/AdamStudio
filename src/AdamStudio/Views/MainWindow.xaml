@@ -110,10 +110,10 @@
                     AnchorablesSource="{Binding Anchorables}"
                     LayoutItemContainerStyleSelector="{StaticResource PanesStyleSelector}">
 
-            <!-- Стратегия размещения новых панелей по сторонам 
+            <!-- Стратегия размещения новых панелей по сторонам -->
             <avalonDock:DockingManager.LayoutUpdateStrategy>
                 <docking:LayoutUpdateStrategy />
-            </avalonDock:DockingManager.LayoutUpdateStrategy>-->
+            </avalonDock:DockingManager.LayoutUpdateStrategy>
 
             <!-- Тема VS2013 Light -->
             <avalonDock:DockingManager.Theme>

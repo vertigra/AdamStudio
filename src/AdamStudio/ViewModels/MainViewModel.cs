@@ -11,6 +11,8 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -38,6 +40,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private readonly ILayoutSerializerService mLayoutSerializerService;
     private readonly IThemeService mThemeService;
     private readonly IDocumentService mDocumentService;
+    private readonly IDockEventBinder mDockEventBinder;
     private readonly ILogService<MainViewModel> mLogService;
 
     #endregion
@@ -58,8 +61,8 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         ILayoutSerializerService layoutSerializer,
         IThemeService themeService,
         IDocumentService dcumentService,
-        ILogService<MainViewModel> logService,
-        IDockEventBinder dockEventBinder)
+        IDockEventBinder dockEventBinder,
+        ILogService<MainViewModel> logService)
     {
         mWorkspaceService = workspaceService;
         mEditorFactory = factory;
@@ -68,6 +71,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mLayoutSerializerService = layoutSerializer;
         mThemeService = themeService;
         mDocumentService = dcumentService;
+        mDockEventBinder = dockEventBinder;
         mLogService = logService;
 
         // Регистрируем стартовые панели
@@ -80,24 +84,56 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         //CreateWelcomeDocument();
         LoadWorkspace();
 
-        mDocumentService.PropertyChanged += OnDocumentServicePropertyChanged;
+        mDocumentService.PropertyChanged += OnDocumentPropertyChanged;
+        mDockEventBinder.LayoutChanged += LayoutChanged;
         //dockEventBinder.AnchorableHidden += DockEventBinder_AnchorableHidden;
     }
 
-    private void DockEventBinder_AnchorableHidden(object? sender, AnchorableEventArgs e)
+    private int _layoutChangeCount = 0;
+    private readonly int _saveLayotDelay = 500;
+
+    private void LayoutChanged(object? sender, EventArgs e)
+    {
+        // 1. Обновляем запомненные позиции панелей в ToolboxService.
+        //    Это нужно, чтобы при Show() после Hide() панель открылась там же,
+        //    где была последний раз (даже если её перетаскивали).
+        mToolboxService.UpdateLastPositions();
+
+        // 2. Сохраняем layout в файл синхронно.
+        //    LayoutRoot.Updated срабатывает часто (при каждом перетаскивании),
+        //    но вы просили без таймера — делаем сразу.
+        // Простой debounce: сохраняем только если за 500мс не было новых изменений
+        Interlocked.Increment(ref _layoutChangeCount);
+        Task.Run(async () =>
+        {
+            await Task.Delay(_saveLayotDelay);
+
+            if (Interlocked.Decrement(ref _layoutChangeCount) == 0)
+            {
+                try 
+                {
+                    mLogService.LogDebug("Сохраняем панели");
+                    SaveLayout(); 
+                } 
+                catch { }
+            }
+        });
+    }
+
+    /*private void DockEventBinder_AnchorableHidden(object? sender, AnchorableEventArgs e)
     {
         if (e.Anchorable.Content is ToolViewModelBase tool)
         {
             var s = 5;
             //tool.IsHidden = true;
         }
-    }
+    }*/
 
 
     public ObservableCollection<EditorTabViewModel> Documents => mDocumentService.Documents;
     public EditorTabViewModel? ActiveDocument => mDocumentService.ActiveDocument;
 
-    private void OnDocumentServicePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(IDocumentService.ActiveDocument))
         {
@@ -274,22 +310,24 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     public void OnApplicationExiting()
     {
         // Сохраняем layout (если менеджер ещё жив)
-        try
-        {
-            var manager = mDockingManagerProvider.Manager;
-
-            if (manager is null)
-                return;
-            
-            mLayoutSerializerService.Serialize(manager, LayoutFilePath);
-        }
+        try{ SaveLayout(); }
         catch { /* best-effort */ }
 
         try { SaveWorkspace(); }
         catch { /* best-effort */ }
 
         try { SaveSettings(); } 
-        catch { }
+        catch { /* best-effort */ }
+    }
+
+    private void SaveLayout()
+    {
+        var manager = mDockingManagerProvider.Manager;
+
+        if (manager is null)
+            return;
+
+        mLayoutSerializerService.Serialize(manager, LayoutFilePath);
     }
 
     /*private void CreateWelcomeDocument()
