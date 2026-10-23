@@ -57,27 +57,20 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     public EditorTabViewModel? ActiveDocument => mDocumentService.ActiveDocument;
     public ObservableCollection<ToolViewModelBase> Anchorables => mToolboxService.Anchorables;
     public IReadOnlyList<ThemeInfo> AvailableThemes => mThemeService.AvailableThemes;
-
-    [ObservableProperty]
-    public partial string? CurrentThemeName { get; set; }
-
-    partial void OnCurrentThemeNameChanged(string? value)
-    {
-        if (!string.IsNullOrEmpty(value))
-            mThemeService.ApplyTheme(value);
-    }
+    public string? CurrentThemeName => mThemeService?.CurrentTheme?.Name;
 
     // --- Жизненный цикл ---
 
     public void OnWindowLoaded()
     {
-        // Восстанавливаем всё состояние (workspace + layout + settings)
+        // Восстанавливаем всё состояние (workspace + layout + setting)
         mPersistenceService.Restore();
     }
 
     public void OnWindowClosed() => mPersistenceService.Save();
 
-    public void OnApplicationExiting() => mPersistenceService.Save();
+    //вызывается из App.xaml и как будто бы лишнее, дублирует OnWindowClosed который вызывается из сервиса
+    //public void OnApplicationExiting() => mPersistenceService.Save();
 
     // --- Обработчики ---
 
@@ -93,7 +86,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     private void OnLayoutChanged(object? sender, EventArgs e)
     {
-        mToolboxService.UpdateLastPositions();
+        //mToolboxService.UpdateLastPositions();
         mPersistenceService.ScheduleLayoutSave();
     }
 
@@ -136,8 +129,10 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     [RelayCommand]
     private void SetTheme(string? themeName)
     {
-        if (string.IsNullOrEmpty(themeName)) return;
-        CurrentThemeName = themeName;
+        if (string.IsNullOrEmpty(themeName)) 
+            return;
+
+        mThemeService.ApplyTheme(themeName);
         mLogService.LogInformation($"Тема изменена: {themeName}");
     }
 }

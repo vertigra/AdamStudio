@@ -39,6 +39,7 @@ public sealed class WindowLifecycleService : IWindowLifecycleService
     {
         window.Loaded += OnLoaded;
         window.Closed += OnClosed;
+
         return;
 
         // --- Локальные обработчики — захватывают window и dockManager из замыкания ---

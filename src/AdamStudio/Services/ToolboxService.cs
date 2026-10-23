@@ -21,21 +21,30 @@ public interface IToolboxService
 
 public sealed class ToolboxService : IToolboxService
 {
-    private readonly IServiceProvider _services;
-    private readonly IDockingManagerProvider _managerProvider;
+    private readonly IServiceProvider mServices;
+    private readonly IDockingManagerProvider mManagerProvider;
     private readonly Dictionary<string, LayoutAnchorablePane> _lastPanes = [];
+    private readonly IDockEventBinder mDockEventBinder;
 
-    public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider)
+    public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider, IDockEventBinder dockEventBinder)
     {
-        _services = services;
-        _managerProvider = managerProvider;
+        mServices = services;
+        mManagerProvider = managerProvider;
+        mDockEventBinder = dockEventBinder;
+
+        mDockEventBinder.LayoutChanged += OnLayoutChanged;
+    }
+
+    private void OnLayoutChanged(object? sender, EventArgs e)
+    {
+        UpdateLastPositions();
     }
 
     public ObservableCollection<ToolViewModelBase> Anchorables { get; } = [];
 
     public T Register<T>() where T : ToolViewModelBase
     {
-        var toolbox = _services.GetRequiredService<T>();
+        var toolbox = mServices.GetRequiredService<T>();
         if (!Anchorables.Contains(toolbox))
             Anchorables.Add(toolbox);
         return toolbox;
@@ -132,7 +141,7 @@ public sealed class ToolboxService : IToolboxService
 
     private LayoutAnchorable? FindLayoutAnchorable(string contentId)
     {
-        var manager = _managerProvider.Manager;
+        var manager = mManagerProvider.Manager;
         if (manager is null) return null;
 
         return manager.Layout?.Descendents()

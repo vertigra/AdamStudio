@@ -1,6 +1,8 @@
 ﻿using AdamStudio.Model;
 using AvalonDock.Themes;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 
 namespace AdamStudio.Services;
@@ -11,7 +13,7 @@ namespace AdamStudio.Services;
 ///
 /// Используется в MainViewModel для команды смены темы из меню «Вид → Темы».
 /// </summary>
-public interface IThemeService
+public interface IThemeService : INotifyPropertyChanged
 {
     /// <summary>Список доступных тем для биндинга в меню.</summary>
     IReadOnlyList<ThemeInfo> AvailableThemes { get; }
@@ -27,14 +29,15 @@ public interface IThemeService
 }
 
 
-public sealed class ThemeService : IThemeService
+public sealed partial class ThemeService : ObservableObject, IThemeService
 {
     private readonly IDockingManagerProvider mManagerProvider;
-    private ThemeInfo? mCurrentTheme;
+    private readonly ISettingsService mSettingsService;
 
-    public ThemeService(IDockingManagerProvider managerProvider)
+    public ThemeService(IDockingManagerProvider managerProvider, ISettingsService settingsService, IAppPersistenceService appPersistenceService)
     {
         mManagerProvider = managerProvider;
+        mSettingsService = settingsService;
 
         // Доступные темы. Добавьте свои при необходимости.
         AvailableThemes = new List<ThemeInfo>
@@ -44,17 +47,28 @@ public sealed class ThemeService : IThemeService
             new() { Name = "VS2013Blue",   DisplayName = "VS2013: Синяя",   CreateTheme = () => new Vs2013BlueTheme() },
         }.AsReadOnly();
 
-        // По умолчанию — Light
-        mCurrentTheme = AvailableThemes[0];
+        appPersistenceService.RestoreHappened += RestoreHappened;
+    }
+
+    private void RestoreHappened(object? sender, System.EventArgs e)
+    {
+        RestoreSetting();
     }
 
     public IReadOnlyList<ThemeInfo> AvailableThemes { get; }
 
-    public ThemeInfo? CurrentTheme => mCurrentTheme;
+    [ObservableProperty]
+    public partial ThemeInfo? CurrentTheme { get; private set; }
+
+    partial void OnCurrentThemeChanged(ThemeInfo? value)
+    {
+        ////TODO Пересохраняет при загрузке
+        SaveSeting(value);
+    }
 
     public void ApplyTheme(string name)
     {
-        var theme = AvailableThemes.FirstOrDefault(t => t.Name == name);
+        ThemeInfo? theme = AvailableThemes.FirstOrDefault(t => t.Name == name);
         
         if (theme is null) 
             return;
@@ -67,7 +81,18 @@ public sealed class ThemeService : IThemeService
         if (mManagerProvider.Manager is AvalonDock.DockingManager manager)
         {
             manager.Theme = theme.CreateTheme();
-            mCurrentTheme = theme;
+            CurrentTheme = theme;
         }
     }
+
+    private void SaveSeting(ThemeInfo? theme)
+    {
+        mSettingsService.Current.ThemeName = theme?.Name ?? "VS2013Light";
+    }
+
+    private void RestoreSetting()
+    {
+        ApplyTheme(mSettingsService.Current.ThemeName);
+    }
+
 }

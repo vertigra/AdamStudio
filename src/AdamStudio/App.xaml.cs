@@ -6,9 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
-using Serilog.Core;
-using Serilog.Events;
-using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -18,31 +15,22 @@ public partial class App : Application
 {
     private readonly IHost mHost;
     private readonly ObservableCollection<string> mUiLogLines = [];
-
-    /// <summary>
-    /// Переключатель уровня логирования для UI-панели.
-    /// Доступен глобально — можно менять в runtime без перезапуска.
-    /// </summary>
-    public static LoggingLevelSwitch OutputPanelLevelSwitch { get; } = new(LogEventLevel.Information);
-
     public App()
     {
+        var settingsService = new SettingsService();
 
         // 1. Читаем конфигурацию из appsettings.json
         var configuration = new ConfigurationBuilder()
-            .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .SetBasePath(settingsService.SettingsDirectory)
+            .AddJsonFile(settingsService.SettingsFileName, optional: false, reloadOnChange: true)
             .Build();
-
-        // Читаем уровень для UI из конфига (с fallback на Information)
-        var uiLevel = configuration.GetValue("UI:OutputPanel:MinimumLevel", LogEventLevel.Information);
-        OutputPanelLevelSwitch.MinimumLevel = uiLevel;
 
         // 2. Создаём Serilog logger из конфигурации
         //    ObservableSink добавляем программно — он ссылается на _uiLogLines
         Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
-            .WriteTo.ObservableSink(mUiLogLines, levelSwitch: OutputPanelLevelSwitch)
+            .MinimumLevel.ControlledBy(settingsService.GlobalLevelSwitch)
+            .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
             .CreateLogger();
 
         mHost = Host.CreateDefaultBuilder()
@@ -50,6 +38,7 @@ public partial class App : Application
             {
                 services.AddSingleton(sp => sp);
 
+                services.AddSingleton<ISettingsService>(settingsService);
                 services.AddSingleton<IConfiguration>(configuration);
 
                 // Serilog.ILogger — глобальный логер
@@ -125,8 +114,8 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        var vm = mHost.Services.GetService<MainViewModel>();
-        vm?.OnApplicationExiting();
+        //var vm = mHost.Services.GetService<MainViewModel>();
+        //vm?.OnApplicationExiting();
 
         await mHost.StopAsync();
         mHost.Dispose();

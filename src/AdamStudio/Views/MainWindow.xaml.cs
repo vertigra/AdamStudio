@@ -15,6 +15,7 @@ public partial class MainWindow : Window
     {
         DataContext = viewModel;
         InitializeComponent();
+
         lifecycle.Attach(this, dockManager);
     }
 }

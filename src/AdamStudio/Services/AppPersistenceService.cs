@@ -12,15 +12,19 @@ namespace AdamStudio.Services;
 /// <summary>
 /// Единый сервис персистентности приложения. Инкапсулирует:
 /// - сохранение/восстановление layout (layout.xml)
-/// - сохранение/восстановление workspace (workspace.json — список документов)
-/// - сохранение/восстановление настроек (settings.json — тема и т.д.)
+/// - сохранение/восстановление workspace (workspace.json — список документов
 /// - debounced автосохранение layout при изменениях
 ///
 /// MainViewModel делегирует сюда всё — никаких путей к файлам и сериализации в VM.
 /// </summary>
 public interface IAppPersistenceService
 {
-    /// <summary>Восстановить всё состояние при старте приложения.</summary>
+    /// <summary>
+    /// Сообщает подписчикам что необходимо восстановить настройки
+    /// </summary>
+    event EventHandler? RestoreHappened;
+
+    /// <summary>Восстановить всё состояние при старте приложения включая состояние, вызывает событие RestoreHappened</summary>
     void Restore();
 
     /// <summary>Сохранить всё состояние (выход, явная команда).</summary>
@@ -32,17 +36,19 @@ public interface IAppPersistenceService
 
 public sealed class AppPersistenceService : IAppPersistenceService
 {
-    private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
-    private static readonly string WorkspaceFilePath = Path.Combine(AppDataDir, "workspace.json");
-    private static readonly string LayoutFilePath = Path.Combine(AppDataDir, "layout.xml");
-    private static readonly string SettingsFilePath = Path.Combine(AppDataDir, "settings.json");
+    public event EventHandler? RestoreHappened;
 
     private readonly IDockingManagerProvider mDockingManager;
     private readonly ILayoutSerializerService mLayoutSerializer;
     private readonly IWorkspaceService mWorkspaceService;
     private readonly IEditorTabViewModelFactory mEditorTabFactory;
     private readonly IDocumentService mDocumentService;
+    private readonly ISettingsService mSettingsService;
     private readonly ILogService<AppPersistenceService> mLoggerService;
+
+    private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
+    private static readonly string WorkspaceFilePath = Path.Combine(AppDataDir, "workspace.json");
+    private static readonly string LayoutFilePath = Path.Combine(AppDataDir, "layout.xml");
 
     private int mLayoutChangeCount;
     private const int cSaveLayoutDelayMs = 500;
@@ -53,17 +59,40 @@ public sealed class AppPersistenceService : IAppPersistenceService
         IWorkspaceService workspaceService,
         IEditorTabViewModelFactory factory,
         IDocumentService documentService,
-        ILogService<AppPersistenceService> log)
+        ISettingsService settingsService,
+        ILogService<AppPersistenceService> loggerService)
     {
         mDockingManager = managerProvider;
         mLayoutSerializer = layoutSerializer;
         mWorkspaceService = workspaceService;
         mEditorTabFactory = factory;
         mDocumentService = documentService;
-        mLoggerService = log;
+        mSettingsService = settingsService;
+        mLoggerService = loggerService;
     }
 
-    // --- Восстановление ---
+    
+    public void Save()
+    {
+        try 
+        { 
+            SaveLayout(); 
+        }
+        catch (Exception ex) 
+        { 
+            mLoggerService.LogError("SaveLayout failed", ex); 
+        }
+
+        try 
+        { 
+            SaveWorkspace(); 
+        }
+        catch (Exception ex) 
+        { 
+            mLoggerService.LogError("SaveWorkspace failed", ex); 
+        }
+    }
+
 
     public void Restore()
     {
@@ -72,16 +101,11 @@ public sealed class AppPersistenceService : IAppPersistenceService
         RestoreLayout();
     }
 
-    private void RestoreSettings()
-    {
-        // Восстановление темы делегируется в IThemeService — он читает settings.json
-        // (или сделайте тут, если хотите всё в одном месте)
-    }
-
     private void RestoreWorkspace()
     {
         var state = mWorkspaceService.Load(WorkspaceFilePath);
-        if (state.Documents.Count == 0) return;
+        if (state.Documents.Count == 0) 
+            return;
 
         foreach (var d in state.Documents)
         {
@@ -129,15 +153,7 @@ public sealed class AppPersistenceService : IAppPersistenceService
 
     // --- Сохранение ---
 
-    public void Save()
-    {
-        try { SaveLayout(); } 
-        catch (Exception ex) { mLoggerService.LogError("SaveLayout failed", ex); }
-        try { SaveWorkspace(); } 
-        catch (Exception ex) { mLoggerService.LogError("SaveWorkspace failed", ex); }
-        try { SaveSettings(); } 
-        catch (Exception ex) { mLoggerService.LogError("SaveSettings failed", ex); }
-    }
+    
 
     /// <summary>Debounced сохранение layout — вызывать при каждом LayoutChanged.</summary>
     public void ScheduleLayoutSave()
@@ -199,8 +215,10 @@ public sealed class AppPersistenceService : IAppPersistenceService
         mWorkspaceService.Save(WorkspaceFilePath, state);
     }
 
+    private void RestoreSettings() => RestoreHappened?.Invoke(this, new EventArgs());
     private void SaveSettings()
     {
+        //mSettingsService.Current.
         // Настройки (тема) сохраняются через IThemeService — он знает структуру
         // Или сделайте тут, если хотите всё централизованно
     }
