@@ -2,7 +2,6 @@ using AdamStudio.EventArguments;
 using AvalonDock.Core;
 using AvalonDock.Core.Events;
 using AvalonDock.Layout;
-using Microsoft.Extensions.Logging;
 using System;
 
 namespace AdamStudio.Services;
@@ -23,9 +22,10 @@ public sealed class DockEventBinder : IDockEventBinder
     public event EventHandler<AnchorableEventArgs>? AnchorableHidden;
     public event EventHandler<AnchorableEventArgs>? AnchorableClosed;
     public event EventHandler? LayoutChanged;
+    
     private readonly IDockingManagerProvider mProvider;
     private readonly ILogService<DockEventBinder> mLoggerService;
-
+    
     private IDockingManager? mDockingManager;
     private LayoutRoot? mLayoutRoot;
 
@@ -116,5 +116,6 @@ public sealed class DockEventBinder : IDockEventBinder
     private void OnAnchorableHidden(object? sender, AnchorableEventArgs e) => AnchorableHidden?.Invoke(sender, e);
 
     private void OnAnchorableClosed(object? sender, AnchorableEventArgs e) => AnchorableClosed?.Invoke(sender, e);
-    private void OnLayoutUpdated(object? sender, EventArgs e) => LayoutChanged?.Invoke(sender, e); 
+
+    private void OnLayoutUpdated(object? sender, EventArgs e) => LayoutChanged?.Invoke(sender, e);
 }

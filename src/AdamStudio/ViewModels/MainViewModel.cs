@@ -2,7 +2,6 @@ using AdamStudio.Model;
 using AdamStudio.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -14,11 +13,9 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 {
     #region Services
 
-    //private readonly IWorkspaceService mWorkspaceService;
     private readonly IToolboxService mToolboxService;
     private readonly IThemeService mThemeService;
     private readonly IDocumentService mDocumentService;
-    private readonly IDockEventBinder mDockEventBinder;
     private readonly IAppPersistenceService mPersistenceService;
     private readonly ILogService<MainViewModel> mLogService;
 
@@ -28,14 +25,12 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         IToolboxService toolboxService,
         IThemeService themeService,
         IDocumentService documentService,
-        IDockEventBinder dockEventBinder,
         IAppPersistenceService persistenceService,
         ILogService<MainViewModel> logService)
     {
         mToolboxService = toolboxService;
         mThemeService = themeService;
         mDocumentService = documentService;
-        mDockEventBinder = dockEventBinder;
         mPersistenceService = persistenceService;
         mLogService = logService;
 
@@ -48,7 +43,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
         // Подписки
         mDocumentService.PropertyChanged += OnDocumentPropertyChanged;
-        mDockEventBinder.LayoutChanged += OnLayoutChanged;
+        mThemeService.PropertyChanged += ThemePropertyChanged;
     }
 
     // --- Пробросы свойств для биндинга ---
@@ -57,7 +52,8 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     public EditorTabViewModel? ActiveDocument => mDocumentService.ActiveDocument;
     public ObservableCollection<ToolViewModelBase> Anchorables => mToolboxService.Anchorables;
     public IReadOnlyList<ThemeInfo> AvailableThemes => mThemeService.AvailableThemes;
-    public string? CurrentThemeName => mThemeService?.CurrentTheme?.Name;
+    public string? CurrentThemeName => mThemeService.CurrentTheme?.Name;
+    
 
     // --- Жизненный цикл ---
 
@@ -76,20 +72,24 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(IDocumentService.ActiveDocument))
+        if (e.PropertyName == nameof(mDocumentService.ActiveDocument))
         {
             OnPropertyChanged(nameof(ActiveDocument));
+
             SaveFileCommand.NotifyCanExecuteChanged();
             CloseDocumentCommand.NotifyCanExecuteChanged();
         }
     }
 
-    private void OnLayoutChanged(object? sender, EventArgs e)
+    private void ThemePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        //mToolboxService.UpdateLastPositions();
-        mPersistenceService.ScheduleLayoutSave();
-    }
+        if (e.PropertyName == nameof(mThemeService.CurrentTheme))
+        {
+            OnPropertyChanged(nameof(CurrentThemeName));
+            mLogService.LogInformation($"Тема изменена: {CurrentThemeName}");
+        }
 
+    }
     // --- Команды ---
 
     [RelayCommand]
@@ -133,6 +133,5 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
             return;
 
         mThemeService.ApplyTheme(themeName);
-        mLogService.LogInformation($"Тема изменена: {themeName}");
     }
 }

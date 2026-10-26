@@ -53,7 +53,6 @@ namespace AdamStudio.Services
 
         public LogService(ILogger logger, ILogService baseLogService)
         {
-            // ForContext<T>() добавляет SourceContext = "AvalonDockMvvmExample.Services.DocumentService"
             mLogger = logger.ForContext<T>();
             LogLines = baseLogService.LogLines;
         }

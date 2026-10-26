@@ -14,12 +14,13 @@ namespace AdamStudio.Services;
 
 public interface ISettingsService : INotifyPropertyChanged
 {
+    event EventHandler<PropertyChangedEventArgs> SettingsPropertyChanged;
+
     string SettingsDirectory { get; }
     string SettingsFileName { get; }
     string SettingsFilePath { get; }
 
     AppSettings Current { get; }
-
     LoggingLevelSwitch GlobalLevelSwitch { get; }
     LoggingLevelSwitch OutputPanelSwitch { get; }
 
@@ -29,6 +30,7 @@ public interface ISettingsService : INotifyPropertyChanged
 
 public sealed partial class SettingsService : ObservableObject, ISettingsService
 {
+    public event EventHandler<PropertyChangedEventArgs>? SettingsPropertyChanged;
     private bool mIsLoading;
 
     public SettingsService()
@@ -54,6 +56,7 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
         try
         {
             mIsLoading = true;
+
             if (!File.Exists(SettingsFilePath))
                 return;
 
@@ -132,8 +135,8 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
 
         if (e.PropertyName == nameof(AppSettings.GlobalLogLevel))
             ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
-        
-        Save();
+
+        SettingsPropertyChanged?.Invoke(this, e);
     }
 
     private static void ApplyLogLevel(LoggingLevelSwitch levelSwitch, string level)

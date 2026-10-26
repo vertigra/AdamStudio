@@ -60,6 +60,7 @@ public sealed class AppPersistenceService : IAppPersistenceService
         IEditorTabViewModelFactory factory,
         IDocumentService documentService,
         ISettingsService settingsService,
+        IDockEventBinder dockEventBinder,
         ILogService<AppPersistenceService> loggerService)
     {
         mDockingManager = managerProvider;
@@ -69,9 +70,16 @@ public sealed class AppPersistenceService : IAppPersistenceService
         mDocumentService = documentService;
         mSettingsService = settingsService;
         mLoggerService = loggerService;
+
+        mSettingsService.Current.PropertyChanged += SettingsPropertyChanged;
+        dockEventBinder.LayoutChanged += OnLayoutChanged;
     }
 
-    
+    private void OnLayoutChanged(object? sender, EventArgs e)
+    {
+        ScheduleLayoutSave();
+    }
+
     public void Save()
     {
         try 
@@ -96,7 +104,7 @@ public sealed class AppPersistenceService : IAppPersistenceService
 
     public void Restore()
     {
-        RestoreSettings();
+        NotifyRestoreCompleted();
         RestoreWorkspace();
         RestoreLayout();
     }
@@ -150,10 +158,6 @@ public sealed class AppPersistenceService : IAppPersistenceService
             }
         });
     }
-
-    // --- Сохранение ---
-
-    
 
     /// <summary>Debounced сохранение layout — вызывать при каждом LayoutChanged.</summary>
     public void ScheduleLayoutSave()
@@ -215,11 +219,13 @@ public sealed class AppPersistenceService : IAppPersistenceService
         mWorkspaceService.Save(WorkspaceFilePath, state);
     }
 
-    private void RestoreSettings() => RestoreHappened?.Invoke(this, new EventArgs());
-    private void SaveSettings()
-    {
-        //mSettingsService.Current.
-        // Настройки (тема) сохраняются через IThemeService — он знает структуру
-        // Или сделайте тут, если хотите всё централизованно
-    }
+    /// <summary>
+    /// Сообщет сервисам что необходимо восстановить настройки
+    /// </summary>
+    private void NotifyRestoreCompleted() => RestoreHappened?.Invoke(this, new EventArgs());
+
+    /// <summary>
+    /// Получает сигнал от сервиса настроек что настройки изменены.Исключает пересохранение при загрузке
+    /// </summary>
+    private void SettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => mSettingsService.Save();
 }

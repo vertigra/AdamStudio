@@ -62,8 +62,7 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
 
     partial void OnCurrentThemeChanged(ThemeInfo? value)
     {
-        ////TODO Пересохраняет при загрузке
-        SaveSeting(value);
+        SaveSettings(value);
     }
 
     public void ApplyTheme(string name)
@@ -85,7 +84,7 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
         }
     }
 
-    private void SaveSeting(ThemeInfo? theme)
+    private void SaveSettings(ThemeInfo? theme)
     {
         mSettingsService.Current.ThemeName = theme?.Name ?? "VS2013Light";
     }
