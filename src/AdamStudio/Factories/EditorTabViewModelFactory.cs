@@ -2,7 +2,7 @@ using AdamStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Factories;
 
 /// <summary>
 /// Фабрика для создания экземпляров EditorTabViewModel через DI.

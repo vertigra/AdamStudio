@@ -1,4 +1,5 @@
 ﻿using AdamStudio.EventArguments;
+using AdamStudio.Factories;
 using AdamStudio.ViewModels;
 using AvalonDock.Core.Events;
 using CommunityToolkit.Mvvm.ComponentModel;

@@ -1,4 +1,5 @@
-﻿using AdamStudio.Model;
+﻿using AdamStudio.Factories;
+using AdamStudio.Model;
 using Serilog;
 using System;
 using System.IO;
