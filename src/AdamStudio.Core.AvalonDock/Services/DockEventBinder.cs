@@ -1,10 +1,10 @@
-using AdamStudio.EventArguments;
+using AdamStudio.Core.AvalonDock.EventArguments;
 using AvalonDock.Core;
 using AvalonDock.Core.Events;
 using AvalonDock.Layout;
-using System;
+using Microsoft.Extensions.Logging;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.AvalonDock.Services;
 
 public interface IDockEventBinder
 {
@@ -24,12 +24,12 @@ public sealed class DockEventBinder : IDockEventBinder
     public event EventHandler? LayoutChanged;
     
     private readonly IDockingManagerProvider mProvider;
-    private readonly ILogService<DockEventBinder> mLoggerService;
+    private readonly ILogger<DockEventBinder> mLoggerService;
     
     private IDockingManager? mDockingManager;
     private LayoutRoot? mLayoutRoot;
 
-    public DockEventBinder(IDockingManagerProvider provider, ILogService<DockEventBinder> logger)
+    public DockEventBinder(IDockingManagerProvider provider, ILogger<DockEventBinder> logger)
     {
         mProvider = provider;
         mLoggerService = logger;

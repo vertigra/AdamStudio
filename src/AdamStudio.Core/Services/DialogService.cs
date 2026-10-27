@@ -1,6 +1,6 @@
 using System.Windows;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.Services;
 
 /// <summary>
 /// Абстракция сервиса диалогов — чтобы ViewModel не зависел от View напрямую.

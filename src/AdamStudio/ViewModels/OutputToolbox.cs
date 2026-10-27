@@ -1,4 +1,4 @@
-using AdamStudio.Services;
+using AdamStudio.Core.Services;
 using AvalonDock.Layout;
 using System.Collections.ObjectModel;
 

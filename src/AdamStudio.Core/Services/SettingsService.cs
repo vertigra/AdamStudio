@@ -1,16 +1,14 @@
-﻿using AdamStudio.Model;
+﻿using AdamStudio.Core.Model;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
-using System;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.Services;
 
 public interface ISettingsService : INotifyPropertyChanged
 {

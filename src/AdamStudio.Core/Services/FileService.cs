@@ -15,7 +15,7 @@ public interface IFileService
     void WriteAllText(string path, string content);   // ← (string, string) → void
 }
 
-public sealed class FileService //: IFileService
+public sealed class FileService : IFileService
 {
     public string? ShowOpenDialog(string title = "Открыть документ", string filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*")
     {

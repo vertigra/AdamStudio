@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace AdamStudio.EventArguments
+namespace AdamStudio.Core.AvalonDock.EventArguments
 {
     public sealed class ActiveContentChangedEventArgs : EventArgs
     {

@@ -1,4 +1,6 @@
-﻿using AdamStudio.Model;
+﻿using AdamStudio.Core.AvalonDock.Services;
+using AdamStudio.Core.Services;
+using AdamStudio.Model;
 using AvalonDock.Themes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.Generic;

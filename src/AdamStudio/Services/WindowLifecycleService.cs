@@ -1,5 +1,6 @@
 using System;
 using System.Windows;
+using AdamStudio.Core.AvalonDock.Services;
 using AvalonDock;
 
 namespace AdamStudio.Services;

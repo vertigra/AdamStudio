@@ -1,4 +1,7 @@
-﻿using AdamStudio.Factories;
+﻿using AdamStudio.Core.AvalonDock.Services;
+using AdamStudio.Core.Services;
+using AdamStudio.Core.Services.AvalonDock;
+using AdamStudio.Factories;
 using AdamStudio.Model;
 using Serilog;
 using System;

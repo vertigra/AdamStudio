@@ -1,4 +1,6 @@
-﻿using AdamStudio.EventArguments;
+﻿using AdamStudio.Core.AvalonDock.EventArguments;
+using AdamStudio.Core.AvalonDock.Services;
+using AdamStudio.Core.Services;
 using AdamStudio.Factories;
 using AdamStudio.ViewModels;
 using AvalonDock.Core.Events;
@@ -22,6 +24,7 @@ namespace AdamStudio.Services
     ///   - Drag-and-drop обработчиков
     ///   - Командной строки
     /// </summary>
+    [Obsolete("Использует ViewModel нуждается в рефакторинге")]
     public interface IDocumentService : INotifyPropertyChanged
     {
         /// <summary>
@@ -36,6 +39,7 @@ namespace AdamStudio.Services
         bool Close(EditorTabViewModel doc);
     }
 
+    [Obsolete("Использует ViewModel нуждается в рефакторинге")]
     public sealed partial class DocumentService : ObservableObject, IDocumentService
     {
         #region Services

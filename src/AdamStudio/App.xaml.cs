@@ -1,3 +1,6 @@
+using AdamStudio.Core.AvalonDock.Services;
+using AdamStudio.Core.Services;
+using AdamStudio.Core.Services.AvalonDock;
 using AdamStudio.Extensions;
 using AdamStudio.Factories;
 using AdamStudio.Services;
@@ -44,6 +47,7 @@ public partial class App : Application
 
                 // Serilog.ILogger — глобальный логер
                 services.AddSingleton(_ => Log.Logger);
+                services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
 
                 // Базовый логер (без контекста) — для тех, кому не нужен SourceContext
                 services.AddSingleton<ILogService>(sp => new LogService(sp.GetRequiredService<ILogger>(), mUiLogLines));

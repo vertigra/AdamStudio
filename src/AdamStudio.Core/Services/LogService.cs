@@ -1,9 +1,8 @@
 ﻿using Serilog;
 using Serilog.Events;
-using System;
 using System.Collections.ObjectModel;
 
-namespace AdamStudio.Services
+namespace AdamStudio.Core.Services
 {
     public interface ILogService
     {

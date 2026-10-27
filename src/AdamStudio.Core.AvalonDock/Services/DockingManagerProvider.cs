@@ -1,7 +1,7 @@
 using AvalonDock.Core;
-using System;
+using Microsoft.Extensions.Logging;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.AvalonDock.Services;
 
 /// <summary>
 /// Holder для DockingManager. MainWindow устанавливает ссылку при загрузке,
@@ -15,8 +15,16 @@ public interface IDockingManagerProvider
 
 public sealed class DockingManagerProvider : IDockingManagerProvider
 {
+    private readonly ILogger<DockingManagerProvider> mLogger;
+
     private IDockingManager? mDockingManager;
 
+    public DockingManagerProvider(ILogger<DockingManagerProvider> logger)
+    {
+        mLogger = logger;
+    }
+
+    
     public IDockingManager? Manager
     {
         get => mDockingManager;
