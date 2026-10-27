@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="src/AdamStudio.Core.AvalonDock/AdamStudio.Core.AvalonDock.csproj" Id="68d511cd-342a-40f0-8850-15b5a7f33627" />
+  <Project Path="src/AdamStudio.Core/AdamStudio.Core.csproj" Id="dd3a0da1-5216-4d38-9253-44630ada208e" />
   <Project Path="src/AdamStudio/AdamStudio.csproj" />
 </Solution>
