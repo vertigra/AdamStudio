@@ -21,12 +21,14 @@ public interface IWindowLifecycleAware
 /// MainWindow передаёт себя и DockingManager в этот сервис —
 /// больше никакой логики в code-behind не остаётся.
 /// </summary>
+[Obsolete("Использует WPF нужно изменить на T")]
 public interface IWindowLifecycleService
 {
     /// <summary>Подписать окно на события жизненного цикла.</summary>
     void Attach(Window window, DockingManager dockManager);
 }
 
+[Obsolete("Использует WPF нужно изменить на T")]
 public sealed class WindowLifecycleService : IWindowLifecycleService
 {
     private readonly IDockingManagerProvider mDockingManagerProvider;

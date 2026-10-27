@@ -1,9 +1,8 @@
-﻿using System;
-using System.IO;
-using AvalonDock.Core;
+﻿using AvalonDock.Core;
 using AvalonDock.Serializer.Xml;
+using System.IO;
 
-namespace AdamStudio.Core.Services.AvalonDock
+namespace AdamStudio.Core.AvalonDock.Services
 {
     /// <summary>
     /// Сериализация layout AvalonDock в XML.

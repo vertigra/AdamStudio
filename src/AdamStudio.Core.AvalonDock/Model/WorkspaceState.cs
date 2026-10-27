@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using AdamStudio.Model;
 
-namespace AdamStudio.Model
+namespace AdamStudio.Core.AvalonDock.Model
 {
     /// <summary>Рабочее состояние приложения — список открытых документов.</summary>
     public sealed class WorkspaceState

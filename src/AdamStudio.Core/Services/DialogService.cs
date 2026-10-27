@@ -13,7 +13,9 @@ public interface IDialogService
 
 public sealed class DialogService : IDialogService
 {
-    public MessageBoxResult ShowQuestion(string message, string title) => MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question);
+    public MessageBoxResult ShowQuestion(string message, string title) => 
+        MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-    public void ShowInformation(string message, string title) => MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
+    public void ShowInformation(string message, string title) => 
+        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Information);
 }

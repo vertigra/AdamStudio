@@ -55,7 +55,7 @@ public partial class App : Application
                 // Типизированный логер — добавляет SourceContext автоматически
                 services.AddSingleton(typeof(ILogService<>), typeof(LogService<>));
 
-                services.AddSingleton<IAppPersistenceService, AppPersistenceService>();
+                services.AddSingleton<IPersistenceService, PersistenceService>();
                 // --- Сервисы приложения ---
 
                 services.AddSingleton<IDialogService, DialogService>();

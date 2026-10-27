@@ -6,7 +6,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <UseWPF>true</UseWPF>
   </PropertyGroup>
   
   <ItemGroup>
@@ -31,5 +30,9 @@
   
   <ItemGroup>
     <ProjectReference Include="..\AdamStudio.Core.AvalonDock\AdamStudio.Core.AvalonDock.csproj" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Folder Include="Services.AvalonDock\" />
   </ItemGroup>
 </Project>

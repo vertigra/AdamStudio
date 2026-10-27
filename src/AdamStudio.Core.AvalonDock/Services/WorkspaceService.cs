@@ -1,6 +1,4 @@
-using AdamStudio.Model;
-using System;
-using System.IO;
+using AdamStudio.Core.AvalonDock.Model;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 

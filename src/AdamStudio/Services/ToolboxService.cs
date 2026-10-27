@@ -9,6 +9,7 @@ using System.Linq;
 
 namespace AdamStudio.Services;
 
+[Obsolete("Использует view model нужно изменить на T")]
 public interface IToolboxService
 {
     ObservableCollection<ToolViewModelBase> Anchorables { get; }
@@ -20,11 +21,12 @@ public interface IToolboxService
     void UpdateLastPositions();
 }
 
+[Obsolete("Использует view model нужно изменить на T")]
 public sealed class ToolboxService : IToolboxService
 {
     private readonly IServiceProvider mServices;
     private readonly IDockingManagerProvider mManagerProvider;
-    private readonly Dictionary<string, LayoutAnchorablePane> _lastPanes = [];
+    private readonly Dictionary<string, LayoutAnchorablePane> mLastPanes = [];
     private readonly IDockEventBinder mDockEventBinder;
 
     public ToolboxService(IServiceProvider services, IDockingManagerProvider managerProvider, IDockEventBinder dockEventBinder)
@@ -106,7 +108,7 @@ public sealed class ToolboxService : IToolboxService
             var anchorable = FindLayoutAnchorable(toolbox.ContentId);
             if (anchorable?.Parent is LayoutAnchorablePane pane && pane.Root != null)
             {
-                _lastPanes[toolbox.ContentId] = pane;
+                mLastPanes[toolbox.ContentId] = pane;
             }
         }
     }
@@ -119,7 +121,7 @@ public sealed class ToolboxService : IToolboxService
             prev.PreviousContainer = null;
 
         // Если есть запомненная pane и она жива (в дереве) — добавляем туда
-        if (_lastPanes.TryGetValue(toolbox.ContentId, out var pane) && pane.Root != null)
+        if (mLastPanes.TryGetValue(toolbox.ContentId, out var pane) && pane.Root != null)
         {
             if (anchorable.Parent is LayoutAnchorablePane oldParent)
                 oldParent.Children.Remove(anchorable);
@@ -135,7 +137,7 @@ public sealed class ToolboxService : IToolboxService
     {
         // Перед скрытием запоминаем текущую pane
         if (anchorable.Parent is LayoutAnchorablePane pane && pane.Root != null)
-            _lastPanes[toolbox.ContentId] = pane;
+            mLastPanes[toolbox.ContentId] = pane;
 
         anchorable.Hide();
     }

@@ -1,13 +1,11 @@
 ﻿using AdamStudio.Core.AvalonDock.Services;
-using AdamStudio.Core.Services;
 using AdamStudio.Model;
+using AvalonDock;
 using AvalonDock.Themes;
 using CommunityToolkit.Mvvm.ComponentModel;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.Services.AvalonDock;
 
 /// <summary>
 /// Управление темами AvalonDock. Хранит список доступных тем,
@@ -36,7 +34,7 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
     private readonly IDockingManagerProvider mManagerProvider;
     private readonly ISettingsService mSettingsService;
 
-    public ThemeService(IDockingManagerProvider managerProvider, ISettingsService settingsService, IAppPersistenceService appPersistenceService)
+    public ThemeService(IDockingManagerProvider managerProvider, ISettingsService settingsService, IPersistenceService appPersistenceService)
     {
         mManagerProvider = managerProvider;
         mSettingsService = settingsService;
@@ -52,7 +50,7 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
         appPersistenceService.RestoreHappened += RestoreHappened;
     }
 
-    private void RestoreHappened(object? sender, System.EventArgs e)
+    private void RestoreHappened(object? sender, EventArgs e)
     {
         RestoreSetting();
     }
@@ -79,7 +77,7 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
 
     public void ApplyTheme(ThemeInfo theme)
     {
-        if (mManagerProvider.Manager is AvalonDock.DockingManager manager)
+        if (mManagerProvider.Manager is DockingManager manager)
         {
             manager.Theme = theme.CreateTheme();
             CurrentTheme = theme;

@@ -1,4 +1,5 @@
 using AdamStudio.Core.Services;
+using AdamStudio.Core.Services.AvalonDock;
 using AdamStudio.Model;
 using AdamStudio.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -17,7 +18,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private readonly IToolboxService mToolboxService;
     private readonly IThemeService mThemeService;
     private readonly IDocumentService mDocumentService;
-    private readonly IAppPersistenceService mPersistenceService;
+    private readonly IPersistenceService mPersistenceService;
     private readonly ILogService<MainViewModel> mLogService;
 
     #endregion
@@ -26,7 +27,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         IToolboxService toolboxService,
         IThemeService themeService,
         IDocumentService documentService,
-        IAppPersistenceService persistenceService,
+        IPersistenceService persistenceService,
         ILogService<MainViewModel> logService)
     {
         mToolboxService = toolboxService;

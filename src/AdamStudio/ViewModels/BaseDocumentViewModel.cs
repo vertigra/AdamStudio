@@ -3,6 +3,7 @@ using System;
 
 namespace AdamStudio.ViewModels
 {
+    [Obsolete("Пока не используется")]
     public partial class BaseDocumentViewModel : ObservableObject
     {
         [ObservableProperty]

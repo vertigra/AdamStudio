@@ -1,4 +1,4 @@
-using System.IO;
+
 using Microsoft.Win32;
 
 namespace AdamStudio.Core.Services;
@@ -12,7 +12,7 @@ public interface IFileService
     string? ShowOpenDialog(string title = "Открыть документ", string filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*");
     string? ShowSaveDialog(string? suggestedFileName = null, string filter = "Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*");
     string ReadAllText(string path);
-    void WriteAllText(string path, string content);   // ← (string, string) → void
+    void WriteAllText(string path, string content);  
 }
 
 public sealed class FileService : IFileService

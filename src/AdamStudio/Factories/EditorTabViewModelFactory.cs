@@ -22,6 +22,7 @@ namespace AdamStudio.Factories;
 ///   _factory.CreateNew("Документ 1", "Содержимое...");
 ///   _factory.CreateFromFile(filePath);
 /// </summary>
+[Obsolete("Использует view model нужно изменить на T")]
 public interface IEditorTabViewModelFactory
 {
     /// <summary>Создать пустой документ с заголовком по умолчанию.</summary>
@@ -36,6 +37,7 @@ public interface IEditorTabViewModelFactory
     EditorTabViewModel CreateFromFile(string filePath);
 }
 
+[Obsolete("Использует view model нужно изменить на T")]
 public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
 {
     private readonly IServiceProvider mServices;

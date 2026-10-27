@@ -1,9 +1,8 @@
-﻿using AdamStudio.Core.AvalonDock.Services;
+﻿using AdamStudio.Core.AvalonDock.Model;
+using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
-using AdamStudio.Core.Services.AvalonDock;
 using AdamStudio.Factories;
 using AdamStudio.Model;
-using Serilog;
 using System;
 using System.IO;
 using System.Threading;
@@ -13,32 +12,7 @@ using System.Windows.Threading;
 
 namespace AdamStudio.Services;
 
-/// <summary>
-/// Единый сервис персистентности приложения. Инкапсулирует:
-/// - сохранение/восстановление layout (layout.xml)
-/// - сохранение/восстановление workspace (workspace.json — список документов
-/// - debounced автосохранение layout при изменениях
-///
-/// MainViewModel делегирует сюда всё — никаких путей к файлам и сериализации в VM.
-/// </summary>
-public interface IAppPersistenceService
-{
-    /// <summary>
-    /// Сообщает подписчикам что необходимо восстановить настройки
-    /// </summary>
-    event EventHandler? RestoreHappened;
-
-    /// <summary>Восстановить всё состояние при старте приложения включая состояние, вызывает событие RestoreHappened</summary>
-    void Restore();
-
-    /// <summary>Сохранить всё состояние (выход, явная команда).</summary>
-    void Save();
-
-    /// <summary>Запланировать отложенное сохранение layout (debounce 500мс).</summary>
-    void ScheduleLayoutSave();
-}
-
-public sealed class AppPersistenceService : IAppPersistenceService
+public sealed class PersistenceService : IPersistenceService
 {
     public event EventHandler? RestoreHappened;
 
@@ -48,7 +22,7 @@ public sealed class AppPersistenceService : IAppPersistenceService
     private readonly IEditorTabViewModelFactory mEditorTabFactory;
     private readonly IDocumentService mDocumentService;
     private readonly ISettingsService mSettingsService;
-    private readonly ILogService<AppPersistenceService> mLoggerService;
+    private readonly ILogService<PersistenceService> mLoggerService;
 
     private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
     private static readonly string WorkspaceFilePath = Path.Combine(AppDataDir, "workspace.json");
@@ -57,7 +31,7 @@ public sealed class AppPersistenceService : IAppPersistenceService
     private int mLayoutChangeCount;
     private const int cSaveLayoutDelayMs = 500;
 
-    public AppPersistenceService(
+    public PersistenceService(
         IDockingManagerProvider managerProvider,
         ILayoutSerializerService layoutSerializer,
         IWorkspaceService workspaceService,
@@ -65,7 +39,7 @@ public sealed class AppPersistenceService : IAppPersistenceService
         IDocumentService documentService,
         ISettingsService settingsService,
         IDockEventBinder dockEventBinder,
-        ILogService<AppPersistenceService> loggerService)
+        ILogService<PersistenceService> loggerService)
     {
         mDockingManager = managerProvider;
         mLayoutSerializer = layoutSerializer;

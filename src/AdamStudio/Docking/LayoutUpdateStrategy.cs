@@ -1,5 +1,6 @@
 using AdamStudio.ViewModels;
 using AvalonDock.Layout;
+using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,6 +12,7 @@ namespace AdamStudio.Docking
     /// Используется ТОЛЬКО для первичного позиционирования (при старте или первой регистрации).
     /// Для Show/Hide во время работы используется ToolboxService.
     /// </summary>
+    [Obsolete("Использует view model нужно изменить на T")]
     public sealed class LayoutUpdateStrategy : ILayoutUpdateStrategy
     {
         public bool BeforeInsertDocument(LayoutRoot layout, LayoutDocument document, ILayoutContainer destinationContainer)
@@ -28,6 +30,7 @@ namespace AdamStudio.Docking
                 .OfType<LayoutAnchorablePane>()
                 .FirstOrDefault(p => GetSide(p) == tool.PreferredSide && p.ChildrenCount > 0);
 
+            // Если есть открытая добавляем вкладку, если отключено, содавать новую
             /*if (existingPane != null)
             {
                 existingPane.Children.Add(anchorable);
