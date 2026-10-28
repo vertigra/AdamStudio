@@ -89,7 +89,7 @@ public sealed class PersistenceService : IPersistenceService
         RestoreLayout();
     }
 
-    [Obsolete("Активация документа работает не корректно")]
+    [Obsolete("Активация документа работает не корректно, отключена, должна акивирваться из layout")]
     private void RestoreWorkspace()
     {
         var state = mWorkspaceService.Load(WorkspaceFilePath);
@@ -103,8 +103,8 @@ public sealed class PersistenceService : IPersistenceService
 
         EditorTabViewModel? activeDoc = mDocumentService.Documents.FirstOrDefault(d => d.IsActive == true);
 
-        if(activeDoc != null)
-            mDocumentService.Activate(activeDoc);
+        //if(activeDoc != null)
+            //mDocumentService.Activate(activeDoc);
 
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
     }

@@ -91,7 +91,7 @@ namespace AdamStudio.Services
         [ObservableProperty]
         public partial EditorTabViewModel? ActiveDocument { get; set; }
 
-        public int NewDocCounter { get; private set; }
+        public int NewDocCounter { get; private set; } = 1;
 
         #endregion
 

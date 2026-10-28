@@ -3,7 +3,7 @@
 namespace AdamStudio.Core.AvalonDock.BaseViewModels
 {
     [Obsolete("Пока не используется")]
-    public partial class BaseDocumentViewModel : ObservableObject
+    public partial class DocumentViewModelBase : ObservableObject
     {
         [ObservableProperty]
         public partial string ContentId { get; set; } = $"doc-{Guid.NewGuid()}";
