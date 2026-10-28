@@ -8,5 +8,6 @@
         public string? FilePath { get; set; }
         public string Content { get; set; } = string.Empty;
         public bool IsDirty { get; set; }
+        public bool IsActive { get; set; }
     }
 }

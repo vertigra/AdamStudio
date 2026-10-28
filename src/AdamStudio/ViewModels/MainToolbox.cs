@@ -1,4 +1,5 @@
-﻿using AdamStudio.Services;
+﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Services;
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;

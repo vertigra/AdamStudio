@@ -3,8 +3,10 @@ using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
 using AdamStudio.Factories;
 using AdamStudio.Model;
+using AdamStudio.ViewModels;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -87,21 +89,23 @@ public sealed class PersistenceService : IPersistenceService
         RestoreLayout();
     }
 
+    [Obsolete("Активация документа работает не корректно")]
     private void RestoreWorkspace()
     {
         var state = mWorkspaceService.Load(WorkspaceFilePath);
         if (state.Documents.Count == 0) 
             return;
 
-        foreach (var d in state.Documents)
+        foreach (WorkspaceDocument d in state.Documents)
         {
-            var doc = mEditorTabFactory.CreateNew(d.Title, d.Content);
-            doc.ContentId = d.ContentId;
-            doc.FilePath = d.FilePath ?? string.Empty;
-            doc.IsModified = d.IsDirty;
-            mDocumentService.Documents.Add(doc);
+            _ = mDocumentService.LoadDocumentState(d);
         }
-        mDocumentService.NewDocCounter = state.NewDocumentCounter;
+
+        EditorTabViewModel? activeDoc = mDocumentService.Documents.FirstOrDefault(d => d.IsActive == true);
+
+        if(activeDoc != null)
+            mDocumentService.Activate(activeDoc);
+
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
     }
 
@@ -190,7 +194,8 @@ public sealed class PersistenceService : IPersistenceService
                 Title = doc.DocumentName,
                 FilePath = string.IsNullOrEmpty(doc.FilePath) ? null : doc.FilePath,
                 Content = doc.Content,
-                IsDirty = doc.IsModified
+                IsDirty = doc.IsModified,
+                IsActive = doc.IsActive
             });
         }
 

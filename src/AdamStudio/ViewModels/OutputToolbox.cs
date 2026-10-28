@@ -1,3 +1,4 @@
+using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.Services;
 using AvalonDock.Layout;
 using System.Collections.ObjectModel;

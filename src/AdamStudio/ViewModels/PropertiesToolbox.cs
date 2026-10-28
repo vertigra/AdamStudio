@@ -1,3 +1,4 @@
+using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.ComponentModel;
 

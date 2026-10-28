@@ -1,7 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
 
-namespace AdamStudio.ViewModels
+namespace AdamStudio.Core.AvalonDock.BaseViewModels
 {
     [Obsolete("Пока не используется")]
     public partial class BaseDocumentViewModel : ObservableObject

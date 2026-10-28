@@ -1,3 +1,4 @@
+using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.ViewModels;
 using System.Windows;
 using System.Windows.Controls;

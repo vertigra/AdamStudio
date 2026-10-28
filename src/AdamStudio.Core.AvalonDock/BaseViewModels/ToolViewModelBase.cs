@@ -1,7 +1,7 @@
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AdamStudio.ViewModels;
+namespace AdamStudio.Core.AvalonDock.BaseViewModels;
 
 /// <summary>
 /// Базовый класс для панелей-инструментов (Anchorable) в классическом DockingManager.

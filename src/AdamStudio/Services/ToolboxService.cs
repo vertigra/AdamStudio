@@ -1,5 +1,5 @@
+using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.AvalonDock.Services;
-using AdamStudio.ViewModels;
 using AvalonDock.Layout;
 using Microsoft.Extensions.DependencyInjection;
 using System;

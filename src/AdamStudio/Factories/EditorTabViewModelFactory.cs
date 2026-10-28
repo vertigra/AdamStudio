@@ -1,6 +1,8 @@
+using AdamStudio.Model;
 using AdamStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Reflection.Metadata;
 
 namespace AdamStudio.Factories;
 
@@ -35,6 +37,11 @@ public interface IEditorTabViewModelFactory
 
     /// <summary>Создать документ и загрузить в него содержимое файла.</summary>
     EditorTabViewModel CreateFromFile(string filePath);
+
+    /// <summary>
+    /// Загружает состояние загруженного документа
+    /// </summary>
+    EditorTabViewModel LoadDocumentState(WorkspaceDocument savedDocument);
 }
 
 [Obsolete("Использует view model нужно изменить на T")]
@@ -69,6 +76,18 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
         EditorTabViewModel doc = Create();
         doc.LoadFile(filePath);
         doc.IsActive = true;
+        return doc;
+    }
+
+    public EditorTabViewModel LoadDocumentState(WorkspaceDocument savedDocument)
+    {
+        var doc = Create();
+        doc.ContentId = savedDocument.ContentId;
+        doc.Title = savedDocument.Title;
+        doc.Content = savedDocument.Content;
+        doc.IsModified = savedDocument.IsDirty;
+        doc.IsActive = savedDocument.IsActive;
+        doc.FilePath = savedDocument.FilePath ?? string.Empty;
         return doc;
     }
 }
