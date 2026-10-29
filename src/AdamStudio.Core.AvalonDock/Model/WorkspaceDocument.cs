@@ -5,9 +5,9 @@
     {
         public string ContentId { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
-        public string? FilePath { get; set; }
+        public string? FilePath { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
-        public bool IsDirty { get; set; }
+        public bool IsModified { get; set; }
         public bool IsActive { get; set; }
     }
 }

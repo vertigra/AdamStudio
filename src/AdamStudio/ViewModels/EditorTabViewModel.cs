@@ -13,17 +13,18 @@ public sealed partial class EditorTabViewModel : ObservableObject
     [ObservableProperty]
     public partial string ContentId { get; set; } = $"doc-{Guid.NewGuid()}";
 
-    // 1. Создаем автосвойство для "чистого" имени документа.
-    // Атрибут [NotifyPropertyChangedFor] заставит UI обновлять Title при каждом изменении DocumentName.
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Title))]
-    public partial string DocumentName { get; set; } =  "Без имени";
+
+    private string title = "Новый документ";
 
     /// <summary>Заголовок вкладки. Показывает «*», если есть несохранённые изменения.</summary>
     public string Title
     {
-        get => IsModified ? $"{DocumentName} *" : DocumentName;
-        set => DocumentName = value; // Просто пробрасываем значение в генерируемое свойство
+        get => IsModified ? $"{title} *" : title;
+        set
+        {
+            if(SetProperty(ref title, value))
+                OnPropertyChanged(nameof(Title));
+        }
     }
 
     [ObservableProperty]
@@ -62,6 +63,7 @@ public sealed partial class EditorTabViewModel : ObservableObject
         try
         {
             Content = File.ReadAllText(path);
+
             // OnContentChanging взведет флаг IsModified в true, 
             // поэтому сбрасываем его обратно в false ПОСЛЕ присвоения Content.
             IsModified = false;
@@ -80,7 +82,7 @@ public sealed partial class EditorTabViewModel : ObservableObject
         if (string.IsNullOrEmpty(path))
         {
             // Здесь передаем чистое имя без звездочки для диалога сохранения
-            path = showSaveDialog(DocumentName);
+            path = showSaveDialog(Title);
 
             if (path is null)
                 return false;

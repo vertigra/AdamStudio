@@ -2,7 +2,7 @@ using AdamStudio.Core.AvalonDock.Model;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.AvalonDock.Services;
 
 public interface IWorkspaceService
 {

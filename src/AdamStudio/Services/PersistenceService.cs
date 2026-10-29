@@ -6,7 +6,6 @@ using AdamStudio.Model;
 using AdamStudio.ViewModels;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -21,7 +20,6 @@ public sealed class PersistenceService : IPersistenceService
     private readonly IDockingManagerProvider mDockingManager;
     private readonly ILayoutSerializerService mLayoutSerializer;
     private readonly IWorkspaceService mWorkspaceService;
-    private readonly IEditorTabViewModelFactory mEditorTabFactory;
     private readonly IDocumentService mDocumentService;
     private readonly ISettingsService mSettingsService;
     private readonly ILogService<PersistenceService> mLoggerService;
@@ -37,7 +35,6 @@ public sealed class PersistenceService : IPersistenceService
         IDockingManagerProvider managerProvider,
         ILayoutSerializerService layoutSerializer,
         IWorkspaceService workspaceService,
-        IEditorTabViewModelFactory factory,
         IDocumentService documentService,
         ISettingsService settingsService,
         IDockEventBinder dockEventBinder,
@@ -46,7 +43,6 @@ public sealed class PersistenceService : IPersistenceService
         mDockingManager = managerProvider;
         mLayoutSerializer = layoutSerializer;
         mWorkspaceService = workspaceService;
-        mEditorTabFactory = factory;
         mDocumentService = documentService;
         mSettingsService = settingsService;
         mLoggerService = loggerService;
@@ -89,7 +85,6 @@ public sealed class PersistenceService : IPersistenceService
         RestoreLayout();
     }
 
-    [Obsolete("Активация документа работает не корректно, отключена, должна акивирваться из layout")]
     private void RestoreWorkspace()
     {
         var state = mWorkspaceService.Load(WorkspaceFilePath);
@@ -100,11 +95,6 @@ public sealed class PersistenceService : IPersistenceService
         {
             _ = mDocumentService.LoadDocumentState(d);
         }
-
-        EditorTabViewModel? activeDoc = mDocumentService.Documents.FirstOrDefault(d => d.IsActive == true);
-
-        //if(activeDoc != null)
-            //mDocumentService.Activate(activeDoc);
 
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
     }
@@ -130,15 +120,28 @@ public sealed class PersistenceService : IPersistenceService
             try
             {
                 if (mLayoutSerializer.Deserialize(manager, LayoutFilePath))
+                {
                     mLoggerService.LogInformation($"Layout восстановлен: {LayoutFilePath}");
-                else
-                    mLoggerService.LogWarning("Не удалось восстановить layout.");
+
+                    if (manager.ActiveContent is EditorTabViewModel activeDoc)
+                    {
+                        mDocumentService.Activate(activeDoc);
+                        mLoggerService.LogInformation($"Восстановлен активный документ: {activeDoc.Title}");
+                        return;
+                    }
+
+                    return;
+                }
+                
+                mLoggerService.LogWarning("Не удалось восстановить layout.");
             }
             catch (Exception ex)
             {
                 mLoggerService.LogError("Ошибка восстановления layout", ex);
             }
         });
+
+        
     }
 
     /// <summary>Debounced сохранение layout — вызывать при каждом LayoutChanged.</summary>
@@ -181,20 +184,17 @@ public sealed class PersistenceService : IPersistenceService
 
     private void SaveWorkspace()
     {
-        var state = new WorkspaceState
-        {
-            NewDocumentCounter = mDocumentService.NewDocCounter
-        };
-
-        foreach (var doc in mDocumentService.Documents)
+        var state = new WorkspaceState();
+       
+        foreach (EditorTabViewModel doc in mDocumentService.Documents)
         {
             state.Documents.Add(new WorkspaceDocument
             {
                 ContentId = doc.ContentId,
-                Title = doc.DocumentName,
+                Title = doc.Title,
                 FilePath = string.IsNullOrEmpty(doc.FilePath) ? null : doc.FilePath,
                 Content = doc.Content,
-                IsDirty = doc.IsModified,
+                IsModified = doc.IsModified,
                 IsActive = doc.IsActive
             });
         }

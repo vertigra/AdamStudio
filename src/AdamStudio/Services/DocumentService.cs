@@ -8,7 +8,6 @@ using AvalonDock.Core.Events;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Windows;
@@ -29,14 +28,10 @@ namespace AdamStudio.Services
     [Obsolete("Использует ViewModel нуждается в рефакторинге")]
     public interface IDocumentService : INotifyPropertyChanged
     {
-        /// <summary>
-        /// Переменная хранит номер документа и сколько всего вкладок открыто
-        /// </summary>
-        public int NewDocCounter { get; }
         ObservableCollection<EditorTabViewModel> Documents { get; }
         EditorTabViewModel? ActiveDocument { get; set; }
         EditorTabViewModel CreateNew();
-        EditorTabViewModel? OpenFile(string? preselectedPath = null);
+        EditorTabViewModel? OpenFile(string? selectedPath = null);
         EditorTabViewModel? LoadDocumentState(WorkspaceDocument savedDocument);
         void Activate(EditorTabViewModel doc);
         bool Save(EditorTabViewModel doc);
@@ -70,19 +65,10 @@ namespace AdamStudio.Services
             mDockEvent.DocumentClosing += OnDocumentClosing;
 
             Documents = [];
-            Documents.CollectionChanged += DocumentsCollectionChanged;
         }
 
         #endregion
 
-        private void DocumentsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.Action == NotifyCollectionChangedAction.Add)
-                NewDocCounter++;
-
-            if (e.Action == NotifyCollectionChangedAction.Remove)
-                NewDocCounter--;
-        }
 
         #region Fields
 
@@ -91,17 +77,16 @@ namespace AdamStudio.Services
         [ObservableProperty]
         public partial EditorTabViewModel? ActiveDocument { get; set; }
 
-        public int NewDocCounter { get; private set; } = 1;
-
         #endregion
 
         #region Public methods
 
         public EditorTabViewModel CreateNew()
         {
-            var doc = mEditorFactory.CreateNew($"Документ {NewDocCounter}", $"Содержимое документа №.\r\nСоздан: {DateTime.Now:G}");
+            EditorTabViewModel doc = mEditorFactory.CreateNew("Новый документ", $"Содержимое документа.\r\nСоздан: {DateTime.Now:G}");
             Documents.Add(doc);
             Activate(doc);
+
             mLogService.LogInformation($"Открыт документ: {doc.Title}");
             return doc;
         }
@@ -227,18 +212,24 @@ namespace AdamStudio.Services
                 return;
             }
 
-
-            // Если согласился - ничего не делаем. AvalonDock сам закроет вкладку,
-            // и это автоматически уберет её из DocumentsSource (коллекции Documents).
-
-            //автоматически не убирает, нужно так
             Documents.Remove(doc);
         }
 
         private void OnActiveContentChanged(object? sender, ActiveContentChangedEventArgs e)
         {
             if (e.NewContent is EditorTabViewModel doc)
+            {
                 Activate(doc);
+            }
+            else
+            {
+                // Сбрасываем, если активировали панель или пустое место
+                // мешает сохранению файла, команда не активируется
+                /*if (ActiveDocument != null)
+                {
+                    ActiveDocument = null;
+                }*/
+            }
         }
 
         #endregion

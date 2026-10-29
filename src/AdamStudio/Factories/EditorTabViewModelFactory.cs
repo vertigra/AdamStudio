@@ -2,7 +2,6 @@ using AdamStudio.Model;
 using AdamStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Reflection.Metadata;
 
 namespace AdamStudio.Factories;
 
@@ -27,7 +26,9 @@ namespace AdamStudio.Factories;
 [Obsolete("Использует view model нужно изменить на T")]
 public interface IEditorTabViewModelFactory
 {
-    /// <summary>Создать пустой документ с заголовком по умолчанию.</summary>
+    /// <summary>
+    /// Создать пустой документ с заголовком по умолчанию.
+    /// </summary>
     EditorTabViewModel Create();
 
     /// <summary>
@@ -64,10 +65,11 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
     public EditorTabViewModel CreateNew(string title, string content)
     {
         var doc = Create();
-        doc.Title = $"{title}";
+        doc.Title = title;
         doc.Content = content;
         doc.IsModified = false;
         doc.IsActive = true;
+
         return doc;
     }
 
@@ -76,6 +78,7 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
         EditorTabViewModel doc = Create();
         doc.LoadFile(filePath);
         doc.IsActive = true;
+
         return doc;
     }
 
@@ -83,11 +86,17 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
     {
         var doc = Create();
         doc.ContentId = savedDocument.ContentId;
-        doc.Title = savedDocument.Title;
         doc.Content = savedDocument.Content;
-        doc.IsModified = savedDocument.IsDirty;
+        doc.IsModified = savedDocument.IsModified;
         doc.IsActive = savedDocument.IsActive;
-        doc.FilePath = savedDocument.FilePath ?? string.Empty;
+
+        if(savedDocument.FilePath != null)
+        {
+            doc.Title = savedDocument.Title;
+            doc.FilePath = savedDocument.FilePath ?? string.Empty;
+        }
+        
+
         return doc;
     }
 }

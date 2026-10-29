@@ -1,6 +1,7 @@
 ﻿using AvalonDock.Core;
 using AvalonDock.Serializer.Xml;
 using System.IO;
+using System.Xml;
 
 namespace AdamStudio.Core.AvalonDock.Services
 {
@@ -73,7 +74,7 @@ namespace AdamStudio.Core.AvalonDock.Services
                 return true;
             }
             catch (IOException) { return false; }
-            catch (System.Xml.XmlException) { return false; }
+            catch (XmlException) { return false; }
             catch (InvalidOperationException) { return false; }
         }
     }
