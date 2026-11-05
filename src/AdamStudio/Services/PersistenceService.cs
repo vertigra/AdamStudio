@@ -1,10 +1,10 @@
 ﻿using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
-using AdamStudio.Factories;
 using AdamStudio.Model;
 using AdamStudio.ViewModels;
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -210,5 +210,5 @@ public sealed class PersistenceService : IPersistenceService
     /// <summary>
     /// Получает сигнал от сервиса настроек что настройки изменены.Исключает пересохранение при загрузке
     /// </summary>
-    private void SettingsPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => mSettingsService.Save();
+    private void SettingsPropertyChanged(object? sender, PropertyChangedEventArgs e) => mSettingsService.Save();
 }

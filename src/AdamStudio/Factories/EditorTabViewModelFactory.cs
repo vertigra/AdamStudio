@@ -86,17 +86,12 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
     {
         var doc = Create();
         doc.ContentId = savedDocument.ContentId;
+        doc.Title = savedDocument.Title;
         doc.Content = savedDocument.Content;
         doc.IsModified = savedDocument.IsModified;
         doc.IsActive = savedDocument.IsActive;
-
-        if(savedDocument.FilePath != null)
-        {
-            doc.Title = savedDocument.Title;
-            doc.FilePath = savedDocument.FilePath ?? string.Empty;
-        }
+        doc.FilePath = savedDocument.FilePath ?? string.Empty;
         
-
         return doc;
     }
 }

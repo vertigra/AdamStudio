@@ -1,3 +1,4 @@
+using AdamStudio.Core.AvalonDock.BaseViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.IO;
@@ -8,52 +9,16 @@ namespace AdamStudio.ViewModels;
 /// ViewModel вкладки документа. В классическом DockingManager (с DocumentsSource)
 /// это просто VM с INotifyPropertyChanged + свойства Title/Content/IsModified.
 /// </summary>
-public sealed partial class EditorTabViewModel : ObservableObject
+public sealed partial class EditorTabViewModel : DocumentViewModelBase
 {
     [ObservableProperty]
-    public partial string ContentId { get; set; } = $"doc-{Guid.NewGuid()}";
-
-
-    private string title = "Новый документ";
-
-    /// <summary>Заголовок вкладки. Показывает «*», если есть несохранённые изменения.</summary>
-    public string Title
-    {
-        get => IsModified ? $"{title} *" : title;
-        set
-        {
-            if(SetProperty(ref title, value))
-                OnPropertyChanged(nameof(Title));
-        }
-    }
+    public partial string Content { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string FilePath { get; set; } = string.Empty;
 
-    [ObservableProperty]
-    public partial string Content { get; set; } = string.Empty;
-
-    // Хук генератора срабатывает ДО изменения свойства Content.
-    // Чтобы избежать ложного срабатывания IsModified при первой загрузке файла, 
-    // мы временно сбрасываем этот флаг в методе LoadFile ниже.
-    partial void OnContentChanging(string value)
-    {
-        IsModified = true;
-    }
-
-    [ObservableProperty]
-    public partial string ToolTip { get; set; } = "Новый документ";
-
-    [ObservableProperty]
-    public partial bool IsActive { get; set; } 
-
-    // 2. При изменении IsModified генератор автоматически уведомит UI о том, что Title тоже изменился.
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Title))]
-    public partial bool IsModified { get; set; }
-
     /// <summary>Загрузить содержимое файла в документ.</summary>
-    public void LoadFile(string path)
+    public  void LoadFile(string path)
     {
         FilePath = path;
         Title = Path.GetFileName(path);
