@@ -2,14 +2,10 @@ using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.AvalonDock.Services;
 using AvalonDock.Layout;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 
-namespace AdamStudio.Services;
+namespace AdamStudio.Core.Services;
 
-[Obsolete("Использует view model нужно изменить на T")]
 public interface IToolboxService
 {
     ObservableCollection<ToolViewModelBase> Anchorables { get; }
@@ -21,7 +17,6 @@ public interface IToolboxService
     void UpdateLastPositions();
 }
 
-[Obsolete("Использует view model нужно изменить на T")]
 public sealed class ToolboxService : IToolboxService
 {
     private readonly IServiceProvider mServices;
@@ -50,6 +45,7 @@ public sealed class ToolboxService : IToolboxService
         var toolbox = mServices.GetRequiredService<T>();
         if (!Anchorables.Contains(toolbox))
             Anchorables.Add(toolbox);
+
         return toolbox;
     }
 
