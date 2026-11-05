@@ -14,6 +14,14 @@ public sealed partial class EditorTabViewModel : DocumentViewModelBase
     [ObservableProperty]
     public partial string Content { get; set; } = string.Empty;
 
+    // Хук генератора срабатывает ДО изменения свойства Content.
+    // Чтобы избежать ложного срабатывания IsModified при первой загрузке файла, 
+    // мы временно сбрасываем этот флаг в методе LoadFile ниже.
+    partial void OnContentChanging(string value)
+    {
+        IsModified = true;
+    }
+
     [ObservableProperty]
     public partial string FilePath { get; set; } = string.Empty;
 

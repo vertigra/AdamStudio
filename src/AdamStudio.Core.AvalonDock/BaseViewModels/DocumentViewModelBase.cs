@@ -22,15 +22,6 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels
             }
         }
 
-
-        // Хук генератора срабатывает ДО изменения свойства Content.
-        // Чтобы избежать ложного срабатывания IsModified при первой загрузке файла, 
-        // мы временно сбрасываем этот флаг в методе LoadFile ниже.
-        partial void OnContentChanging(string value)
-        {
-            IsModified = true;
-        }
-
         [ObservableProperty]
         public partial string ToolTip { get; set; } = string.Empty;
 
