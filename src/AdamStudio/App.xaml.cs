@@ -61,6 +61,7 @@ public partial class App : Application
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IFileService, FileService>();
                 services.AddSingleton<IWorkspaceService, WorkspaceService>();
+                
 
                 // Holder для DockingManager
                 services.AddSingleton<IDockingManagerProvider, DockingManagerProvider>();
@@ -74,6 +75,8 @@ public partial class App : Application
                 // Сериализация layout (положение панелей, ширины, floating-окна)
                 services.AddSingleton<ILayoutSerializerService, LayoutSerializerService>();
 
+                // фабрика тем, с типами AvalonDock
+                services.AddSingleton<IThemeFactoryService, ThemeFactoryService>();
                 // Управление темами оформления
                 services.AddSingleton<IThemeService, ThemeService>();
 

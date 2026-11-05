@@ -1,4 +1,5 @@
 using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.Services;
 using AdamStudio.Core.Services.AvalonDock;
 using AdamStudio.Model;

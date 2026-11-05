@@ -31,8 +31,4 @@
   <ItemGroup>
     <ProjectReference Include="..\AdamStudio.Core.AvalonDock\AdamStudio.Core.AvalonDock.csproj" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Services.AvalonDock\" />
-  </ItemGroup>
 </Project>

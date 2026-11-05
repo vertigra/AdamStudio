@@ -28,7 +28,9 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels
         [ObservableProperty]
         public partial bool IsActive { get; set; }
 
-        // 2. При изменении IsModified генератор автоматически уведомит UI о том, что Title тоже изменился.
+        /// <summary>
+        /// При изменении IsModified = true в Title добавиться *
+        /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Title))]
         public partial bool IsModified { get; set; }

@@ -1,8 +1,10 @@
-﻿using AdamStudio.Core.AvalonDock.Services;
+﻿using AdamStudio.Core.AvalonDock.Model;
+using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Model;
 using AvalonDock;
 using AvalonDock.Themes;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using System.ComponentModel;
 
 namespace AdamStudio.Core.Services.AvalonDock;
@@ -23,9 +25,6 @@ public interface IThemeService : INotifyPropertyChanged
 
     /// <summary>Применить тему по имени.</summary>
     void ApplyTheme(string name);
-
-    /// <summary>Применить тему напрямую.</summary>
-    void ApplyTheme(ThemeInfo theme);
 }
 
 
@@ -33,30 +32,21 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
 {
     private readonly IDockingManagerProvider mManagerProvider;
     private readonly ISettingsService mSettingsService;
+    private readonly IThemeFactoryService mThemeFactory;
+    private readonly ILogService<ThemeService> mLogger;
 
-    public ThemeService(IDockingManagerProvider managerProvider, ISettingsService settingsService, IPersistenceService appPersistenceService)
+    public ThemeService(IDockingManagerProvider managerProvider, ISettingsService settingsService, IPersistenceService appPersistenceService, IThemeFactoryService themeFactory, ILogService<ThemeService> logger)
     {
         mManagerProvider = managerProvider;
         mSettingsService = settingsService;
-
-        // Доступные темы. Добавьте свои при необходимости.
-        AvailableThemes = new List<ThemeInfo>
-        {
-            new() { Name = "VS2013Light",  DisplayName = "VS2013: Светлая",  CreateTheme = () => new Vs2013LightTheme() },
-            new() { Name = "VS2013Dark",   DisplayName = "VS2013: Тёмная",  CreateTheme = () => new Vs2013DarkTheme() },
-            new() { Name = "VS2013Blue",   DisplayName = "VS2013: Синяя",   CreateTheme = () => new Vs2013BlueTheme() },
-        }.AsReadOnly();
+        mThemeFactory = themeFactory;
+        mLogger = logger;
 
         appPersistenceService.RestoreHappened += RestoreHappened;
     }
 
-    private void RestoreHappened(object? sender, EventArgs e)
-    {
-        RestoreSetting();
-    }
-
-    public IReadOnlyList<ThemeInfo> AvailableThemes { get; }
-
+    public IReadOnlyList<ThemeInfo> AvailableThemes => mThemeFactory.AvailableThemes;
+        
     [ObservableProperty]
     public partial ThemeInfo? CurrentTheme { get; private set; }
 
@@ -65,23 +55,23 @@ public sealed partial class ThemeService : ObservableObject, IThemeService
         SaveSettings(value);
     }
 
-    public void ApplyTheme(string name)
+    private void RestoreHappened(object? sender, EventArgs e)
     {
-        ThemeInfo? theme = AvailableThemes.FirstOrDefault(t => t.Name == name);
-        
-        if (theme is null) 
-            return;
-
-        ApplyTheme(theme);
+        RestoreSetting();
     }
 
-    public void ApplyTheme(ThemeInfo theme)
+    public void ApplyTheme(string name)
     {
-        if (mManagerProvider.Manager is DockingManager manager)
+        try
         {
-            manager.Theme = theme.CreateTheme();
-            CurrentTheme = theme;
+            if (mManagerProvider.Manager is DockingManager manager)
+                CurrentTheme = mThemeFactory.ApplyTheme(name, manager);
         }
+        catch(Exception ex)
+        {
+            mLogger.LogError("Ошибка при изменении темы", ex);
+        }
+        
     }
 
     private void SaveSettings(ThemeInfo? theme)
