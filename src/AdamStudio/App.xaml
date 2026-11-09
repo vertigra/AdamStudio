@@ -23,9 +23,5 @@
             <views:OutputToolView />
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:MainToolbox}">
-            <views:MainToolView />
-        </DataTemplate>
-        
     </Application.Resources>
 </Application>

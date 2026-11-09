@@ -95,7 +95,6 @@ public partial class App : Application
                 // --- Панели (один экземпляр на всё приложение) ---
                 services.AddSingleton<PropertiesToolbox>();
                 services.AddSingleton<OutputToolbox>();
-                services.AddSingleton<MainToolbox>();
 
                 // --- Главная ViewModel ---
                 services.AddSingleton<MainViewModel>();

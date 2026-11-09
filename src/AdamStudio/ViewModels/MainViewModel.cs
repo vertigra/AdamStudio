@@ -41,7 +41,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         // Регистрируем стартовые панели
         mToolboxService.Register<PropertiesToolbox>();
         mToolboxService.Register<OutputToolbox>();
-        mToolboxService.Register<MainToolbox>();
 
         mLogService.LogInformation("Приложение запущено.");
 
@@ -123,9 +122,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     [RelayCommand]
     private void ToggleOutput() => mToolboxService.Toggle<OutputToolbox>();
-
-    [RelayCommand]
-    private void ToggleMainToolbox() => mToolboxService.Toggle<MainToolbox>();
 
     [RelayCommand]
     private void Exit() => Application.Current.Shutdown();

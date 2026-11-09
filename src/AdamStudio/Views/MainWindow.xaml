@@ -69,8 +69,7 @@
                 <Separator />
                 <MenuItem Header="Выход" Command="{Binding ExitCommand}" />
             </MenuItem>
-            <MenuItem Header="_Вид">
-                <MenuItem Header="Панель инструментов"  Command="{Binding ToggleMainToolboxCommand}" />
+            <MenuItem Header="_Панели инструментов">
                 <MenuItem Header="Свойства"  Command="{Binding TogglePropertiesCommand}" />
                 <MenuItem Header="Вывод" Command="{Binding ToggleOutputCommand}" />
             </MenuItem>
