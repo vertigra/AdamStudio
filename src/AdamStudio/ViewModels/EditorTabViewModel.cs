@@ -93,25 +93,4 @@ public sealed partial class EditorTabViewModel : DocumentViewModelBase
             return false;
         }
     }
-
-    /// <summary>Сохранить содержимое в файл. Возвращает false при отмене.</summary>
-    /*public bool SaveToFile(Func<string?, string?> showSaveDialog, Action<string, string> writeAllText)
-    {
-        var path = FilePath;
-
-        if (string.IsNullOrEmpty(path))
-        {
-            // Здесь передаем чистое имя без звездочки для диалога сохранения
-            path = showSaveDialog(Title);
-
-            if (path is null)
-                return false;
-        }
-
-        writeAllText(path, Content);
-        FilePath = path;
-        Title = Path.GetFileName(path);
-        IsModified = false;
-        return true;
-    }*/
 }

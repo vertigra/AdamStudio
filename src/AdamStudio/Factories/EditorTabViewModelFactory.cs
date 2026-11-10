@@ -54,7 +54,6 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
         doc.Title = title;
         doc.Content = content;
         doc.IsModified = false;
-        doc.IsActive = true;
 
         return doc;
     }
@@ -63,7 +62,6 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
     {
         EditorTabViewModel doc = mServices.GetRequiredService<EditorTabViewModel>();
         doc.LoadFile(filePath);
-        doc.IsActive = true;
 
         return doc;
     }
@@ -75,7 +73,6 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
         doc.Title = savedDocument.Title;
         doc.Content = savedDocument.Content;
         doc.IsModified = savedDocument.IsModified;
-        doc.IsActive = savedDocument.IsActive;
         doc.FilePath = savedDocument.FilePath ?? string.Empty;
         
         return doc;

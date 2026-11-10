@@ -10,7 +10,7 @@ namespace AdamStudio.Core.AvalonDock.Services
     public interface IDockWindowService : INotifyPropertyChanged
     {
         ObservableCollection<DocumentViewModelBase> Documents { get; }
-        DocumentViewModelBase? ActiveDocument { get; set; }
+        DocumentViewModelBase? ActiveDocument { get;  }
 
         void OpenDocument(DocumentViewModelBase doc);
         void ActivateDocument(DocumentViewModelBase doc);
@@ -31,7 +31,7 @@ namespace AdamStudio.Core.AvalonDock.Services
         public ObservableCollection<DocumentViewModelBase> Documents { get; } = [];
 
         [ObservableProperty]
-        public partial DocumentViewModelBase? ActiveDocument { get; set; }
+        public partial DocumentViewModelBase? ActiveDocument { get; private set; }
 
         public void OpenDocument(DocumentViewModelBase doc)
         {
@@ -40,8 +40,8 @@ namespace AdamStudio.Core.AvalonDock.Services
                 ActivateDocument(doc);
                 return;
             }
+
             Documents.Add(doc);
-            ActivateDocument(doc);
         }
 
         public void ActivateDocument(DocumentViewModelBase doc)

@@ -106,7 +106,11 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private void OpenNewDocument()
     {
         var doc = mEditorFactory.CreateNew("Новый документ", $"Содержимое документа.\r\nСоздан: {DateTime.Now:G}");
+
         mDockWindowService.OpenDocument(doc);
+        mDockWindowService.ActivateDocument(doc);
+
+        mLogService.LogInformation($"Открыт документ: {doc.Title}");
     }
 
 
@@ -134,7 +138,10 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         try
         {
             EditorTabViewModel doc = mEditorFactory.CreateFromFile(path);
+
             mDockWindowService.OpenDocument(doc);
+            mDockWindowService.ActivateDocument(doc);
+
             mLogService.LogInformation($"Открыт файл: {path}");
         }
         catch (Exception ex)

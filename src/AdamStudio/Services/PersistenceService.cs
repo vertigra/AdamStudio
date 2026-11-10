@@ -134,13 +134,6 @@ public sealed class PersistenceService : IPersistenceService
                     if (manager.ActiveContent is DocumentViewModelBase activeDoc)
                         mDockWindowService.ActivateDocument(activeDoc);
 
-                    /*if (manager.ActiveContent is EditorTabViewModel activeDoc)
-                    {
-                        mDockWindowService.ActivateDocument(activeDoc);
-                        mLoggerService.LogInformation($"Восстановлен активный документ: {activeDoc.Title}");
-                        return;
-                    }*/
-
                     return;
                 }
                 
@@ -206,7 +199,6 @@ public sealed class PersistenceService : IPersistenceService
                 FilePath = string.IsNullOrEmpty(doc.FilePath) ? null : doc.FilePath,
                 Content = doc.Content,
                 IsModified = doc.IsModified,
-                IsActive = doc.IsActive
             });
         }
 
