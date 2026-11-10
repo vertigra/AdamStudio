@@ -1,4 +1,4 @@
-using AdamStudio.Model;
+using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -69,10 +69,12 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
     public EditorTabViewModel LoadDocumentState(WorkspaceDocument savedDocument)
     {
         EditorTabViewModel doc = mServices.GetRequiredService<EditorTabViewModel>();
+
         doc.ContentId = savedDocument.ContentId;
         doc.Title = savedDocument.Title;
         doc.Content = savedDocument.Content;
         doc.IsModified = savedDocument.IsModified;
+        doc.IsActive = savedDocument.IsActive;
         doc.FilePath = savedDocument.FilePath ?? string.Empty;
         
         return doc;

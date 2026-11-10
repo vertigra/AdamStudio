@@ -11,10 +11,21 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels
         public partial string ContentId { get; set; } = $"doc-{Guid.NewGuid()}";
         private string title = string.Empty;
 
-        /// <summary>Заголовок вкладки. Показывает «*», если есть несохранённые изменения.</summary>
+        private const char modifiedChar = '*';
+
+        /// <summary>
+        /// Заголовок вкладки. Показывает «*», если есть несохранённые изменения.
+        /// </summary>
         public string Title
         {
-            get => IsModified ? $"{title} *" : title;
+            get  
+            {
+                //предотвращает задваивание символа *
+                if (title.EndsWith(modifiedChar))
+                    return title;
+
+                return IsModified ? $"{title} {modifiedChar}" : title;
+            }
             set
             {
                 if (SetProperty(ref title, value))
@@ -44,5 +55,6 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels
         /// Подтвердить закрытие. Возвращает false, чтобы отменить.
         /// </summary>
         public virtual bool ConfirmClose() => true;
+
     }
 }

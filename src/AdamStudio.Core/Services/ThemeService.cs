@@ -1,10 +1,7 @@
 ﻿using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
-using AdamStudio.Model;
 using AvalonDock;
-using AvalonDock.Themes;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.Extensions.Logging;
 using System.ComponentModel;
 
 namespace AdamStudio.Core.Services.AvalonDock;

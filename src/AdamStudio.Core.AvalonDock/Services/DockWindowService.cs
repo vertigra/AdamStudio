@@ -67,7 +67,8 @@ namespace AdamStudio.Core.AvalonDock.Services
 
         private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e)
         {
-            if (e.Document.Content is not DocumentViewModelBase doc) return;
+            if (e.Document.Content is not DocumentViewModelBase doc) 
+                return;
 
             if (!doc.ConfirmClose())
             {

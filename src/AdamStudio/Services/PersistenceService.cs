@@ -3,7 +3,6 @@ using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
 using AdamStudio.Factories;
-using AdamStudio.Model;
 using AdamStudio.ViewModels;
 using System;
 using System.ComponentModel;
@@ -93,7 +92,8 @@ public sealed class PersistenceService : IPersistenceService
 
     private void RestoreWorkspace()
     {
-        var state = mWorkspaceService.Load(WorkspaceFilePath);
+        WorkspaceState state = mWorkspaceService.Load(WorkspaceFilePath);
+
         if (state.Documents.Count == 0) 
             return;
 
@@ -102,6 +102,11 @@ public sealed class PersistenceService : IPersistenceService
             var doc = mEditorFactory.LoadDocumentState(d);
             mDockWindowService.OpenDocument(doc);
         }
+
+        /*var activeDoc = mDockWindowService?.Documents?.FirstOrDefault(x => x.IsActive);
+
+        if(activeDoc != null)
+            mDockWindowService?.ActivateDocument(activeDoc);*/
 
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
     }
@@ -132,7 +137,11 @@ public sealed class PersistenceService : IPersistenceService
                     mLoggerService.LogInformation($"Layout восстановлен: {LayoutFilePath}");
                     
                     if (manager.ActiveContent is DocumentViewModelBase activeDoc)
+                    {
                         mDockWindowService.ActivateDocument(activeDoc);
+                        mLoggerService.LogInformation($"Активный документ восстановлен: {activeDoc.Title}");
+                    }
+                        
 
                     return;
                 }
@@ -198,6 +207,7 @@ public sealed class PersistenceService : IPersistenceService
                 Title = doc.Title,
                 FilePath = string.IsNullOrEmpty(doc.FilePath) ? null : doc.FilePath,
                 Content = doc.Content,
+                IsActive = doc.IsActive,
                 IsModified = doc.IsModified,
             });
         }

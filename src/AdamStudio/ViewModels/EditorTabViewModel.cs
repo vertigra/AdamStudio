@@ -15,10 +15,13 @@ public sealed partial class EditorTabViewModel : DocumentViewModelBase
 {
     private readonly IFileService mFileService;
     private readonly IDialogService mDialogService;
-    public EditorTabViewModel(IFileService fileService, IDialogService dialogService)
+    private readonly ILogService<EditorTabViewModel> mLogService;
+
+    public EditorTabViewModel(IFileService fileService, IDialogService dialogService, ILogService<EditorTabViewModel> logService)
     {
         mFileService = fileService;
         mDialogService = dialogService;
+        mLogService = logService;
     }
 
     [ObservableProperty]
@@ -52,7 +55,8 @@ public sealed partial class EditorTabViewModel : DocumentViewModelBase
         }
         catch (Exception ex)
         {
-            Content = $"Ошибка чтения файла: {ex.Message}";
+            mLogService.LogError("Ошибка чтения файла", ex);
+            mDialogService.ShowInformation($"Ошибка чтения файла: {ex.Message}", "Ошибка");
         }
     }
 
@@ -89,6 +93,7 @@ public sealed partial class EditorTabViewModel : DocumentViewModelBase
         }
         catch (Exception ex)
         {
+            mLogService.LogError("Не удалось сохранить", ex);
             mDialogService.ShowInformation($"Не удалось сохранить: {ex.Message}", "Ошибка");
             return false;
         }

@@ -4,7 +4,6 @@ using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
 using AdamStudio.Core.Services.AvalonDock;
 using AdamStudio.Factories;
-using AdamStudio.Model;
 using AdamStudio.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -28,7 +27,6 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private readonly ILogService<MainViewModel> mLogService;
     private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IFileService mFileService;
-
     private readonly IDialogService mDialogService;
 
     #endregion
