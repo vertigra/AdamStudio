@@ -23,14 +23,8 @@ namespace AdamStudio.Factories;
 ///   _factory.CreateNew("Документ 1", "Содержимое...");
 ///   _factory.CreateFromFile(filePath);
 /// </summary>
-[Obsolete("Использует view model нужно изменить на T")]
 public interface IEditorTabViewModelFactory
 {
-    /// <summary>
-    /// Создать пустой документ с заголовком по умолчанию.
-    /// </summary>
-    EditorTabViewModel Create();
-
     /// <summary>
     /// Создать новый документ с заданным заголовком и содержимым. Увеличивает счетчик открытых докуметов 
     /// </summary>
@@ -45,7 +39,6 @@ public interface IEditorTabViewModelFactory
     EditorTabViewModel LoadDocumentState(WorkspaceDocument savedDocument);
 }
 
-[Obsolete("Использует view model нужно изменить на T")]
 public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
 {
     private readonly IServiceProvider mServices;
@@ -55,16 +48,9 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
         mServices = services;
     }
 
-    public EditorTabViewModel Create()
-    {
-        // GetRequiredService<EditorTabViewModel>() работает, т.к. EditorTabViewModel
-        // зарегистрирован как Transient — каждый запрос создаёт новый экземпляр.
-        return mServices.GetRequiredService<EditorTabViewModel>();
-    }
-
     public EditorTabViewModel CreateNew(string title, string content)
     {
-        var doc = Create();
+        var doc = mServices.GetRequiredService<EditorTabViewModel>();
         doc.Title = title;
         doc.Content = content;
         doc.IsModified = false;
@@ -75,7 +61,7 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
 
     public EditorTabViewModel CreateFromFile(string filePath)
     {
-        EditorTabViewModel doc = Create();
+        EditorTabViewModel doc = mServices.GetRequiredService<EditorTabViewModel>();
         doc.LoadFile(filePath);
         doc.IsActive = true;
 
@@ -84,7 +70,7 @@ public sealed class EditorTabViewModelFactory : IEditorTabViewModelFactory
 
     public EditorTabViewModel LoadDocumentState(WorkspaceDocument savedDocument)
     {
-        var doc = Create();
+        EditorTabViewModel doc = mServices.GetRequiredService<EditorTabViewModel>();
         doc.ContentId = savedDocument.ContentId;
         doc.Title = savedDocument.Title;
         doc.Content = savedDocument.Content;

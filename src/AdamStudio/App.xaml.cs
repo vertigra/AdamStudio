@@ -87,7 +87,7 @@ public partial class App : Application
                 services.AddSingleton<IEditorTabViewModelFactory, EditorTabViewModelFactory>();
 
                 // Сервис по управлению документами
-                services.AddSingleton<IDocumentService, DocumentService>();
+                services.AddSingleton<IDockWindowService, DockWindowService>();
 
                 // --- Документы: каждый раз новый экземпляр (transient) ---
                 services.AddTransient<EditorTabViewModel>();

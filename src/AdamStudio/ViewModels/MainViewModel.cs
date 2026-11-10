@@ -1,14 +1,18 @@
 using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.AvalonDock.Model;
+using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
 using AdamStudio.Core.Services.AvalonDock;
+using AdamStudio.Factories;
 using AdamStudio.Model;
 using AdamStudio.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 
 namespace AdamStudio.ViewModels;
@@ -19,24 +23,34 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     private readonly IToolboxService mToolboxService;
     private readonly IThemeService mThemeService;
-    private readonly IDocumentService mDocumentService;
+    private readonly IDockWindowService mDockWindowService;
     private readonly IPersistenceService mPersistenceService;
     private readonly ILogService<MainViewModel> mLogService;
+    private readonly IEditorTabViewModelFactory mEditorFactory;
+    private readonly IFileService mFileService;
+
+    private readonly IDialogService mDialogService;
 
     #endregion
 
     public MainViewModel(
         IToolboxService toolboxService,
         IThemeService themeService,
-        IDocumentService documentService,
+        IDockWindowService dockWindowService,
         IPersistenceService persistenceService,
-        ILogService<MainViewModel> logService)
+        ILogService<MainViewModel> logService,
+        IEditorTabViewModelFactory editorFactory,
+        IFileService fileService,
+        IDialogService dialogService)
     {
         mToolboxService = toolboxService;
         mThemeService = themeService;
-        mDocumentService = documentService;
+        mDockWindowService = dockWindowService;
         mPersistenceService = persistenceService;
         mLogService = logService;
+        mEditorFactory = editorFactory;
+        mFileService = fileService;
+        mDialogService = dialogService;
 
         // Регистрируем стартовые панели
         mToolboxService.Register<PropertiesToolbox>();
@@ -45,14 +59,14 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mLogService.LogInformation("Приложение запущено.");
 
         // Подписки
-        mDocumentService.PropertyChanged += OnDocumentPropertyChanged;
+        mDockWindowService.PropertyChanged += OnDocumentPropertyChanged;
         mThemeService.PropertyChanged += ThemePropertyChanged;
     }
 
     // --- Пробросы свойств для биндинга ---
 
-    public ObservableCollection<EditorTabViewModel> Documents => mDocumentService.Documents;
-    public EditorTabViewModel? ActiveDocument => mDocumentService.ActiveDocument;
+    public ObservableCollection<DocumentViewModelBase> Documents => mDockWindowService.Documents;
+    public DocumentViewModelBase? ActiveDocument => mDockWindowService.ActiveDocument;
     public ObservableCollection<ToolViewModelBase> Anchorables => mToolboxService.Anchorables;
     public IReadOnlyList<ThemeInfo> AvailableThemes => mThemeService.AvailableThemes;
     public string? CurrentThemeName => mThemeService.CurrentTheme?.Name;
@@ -60,22 +74,15 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     // --- Жизненный цикл ---
 
-    public void OnWindowLoaded()
-    {
-        // Восстанавливаем всё состояние (workspace + layout + setting)
-        mPersistenceService.Restore();
-    }
+    public void OnWindowLoaded() => mPersistenceService.Restore();
 
     public void OnWindowClosed() => mPersistenceService.Save();
-
-    //вызывается из App.xaml и как будто бы лишнее, дублирует OnWindowClosed который вызывается из сервиса
-    //public void OnApplicationExiting() => mPersistenceService.Save();
 
     // --- Обработчики ---
 
     private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(mDocumentService.ActiveDocument))
+        if (e.PropertyName == nameof(IDockWindowService.ActiveDocument))
         {
             OnPropertyChanged(nameof(ActiveDocument));
 
@@ -96,23 +103,59 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     // --- Команды ---
 
     [RelayCommand]
-    private void OpenNewDocument() => mDocumentService.CreateNew();
+    private void OpenNewDocument()
+    {
+        var doc = mEditorFactory.CreateNew("Новый документ", $"Содержимое документа.\r\nСоздан: {DateTime.Now:G}");
+        mDockWindowService.OpenDocument(doc);
+    }
+
 
     [RelayCommand]
-    private void OpenFile() => mDocumentService.OpenFile();
+    private void OpenFile() //=> mDocumentService.OpenFile();
+    {
+        var path = mFileService.ShowOpenDialog();
+        
+        if (path is null)
+            return;
+
+        // 1. Ищем среди открытых документов, приводя к EditorTabViewModel
+        var existing = mDockWindowService.Documents
+                                     .OfType<EditorTabViewModel>()
+                                     .FirstOrDefault(d => d.FilePath == path);
+
+        if (existing != null)
+        {
+            // Если уже открыт — активируем через сервис
+            mDockWindowService.ActivateDocument(existing);
+            mLogService.LogInformation($"Активирован существующий: {path}");
+            return;
+        }
+
+        try
+        {
+            EditorTabViewModel doc = mEditorFactory.CreateFromFile(path);
+            mDockWindowService.OpenDocument(doc);
+            mLogService.LogInformation($"Открыт файл: {path}");
+        }
+        catch (Exception ex)
+        {
+            mLogService.LogError("Не удалось открыть файл", ex);
+            mDialogService.ShowInformation($"Не удалось открыть файл: {ex.Message}", "Ошибка");
+        }
+    }
 
     [RelayCommand(CanExecute = nameof(CanSaveOrClose))]
     private void SaveFile()
     {
-        if (ActiveDocument is { } doc)
-            mDocumentService.Save(doc);
+        if (ActiveDocument is EditorTabViewModel editor)
+            editor.SaveToFile();
     }
 
     [RelayCommand(CanExecute = nameof(CanSaveOrClose))]
     private void CloseDocument()
     {
         if (ActiveDocument is { } doc)
-            mDocumentService.Close(doc);
+            mDockWindowService.CloseDocument(doc);
     }
 
     private bool CanSaveOrClose() => ActiveDocument is not null;

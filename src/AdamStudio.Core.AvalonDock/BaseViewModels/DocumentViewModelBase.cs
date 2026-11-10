@@ -34,5 +34,15 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Title))]
         public partial bool IsModified { get; set; }
+
+        /// <summary>
+        /// Сохранить документ. Возвращает false при отмене.
+        /// </summary>
+        public virtual bool SaveToFile() => false;
+
+        /// <summary>
+        /// Подтвердить закрытие. Возвращает false, чтобы отменить.
+        /// </summary>
+        public virtual bool ConfirmClose() => true;
     }
 }

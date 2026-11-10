@@ -1,11 +1,14 @@
-﻿using AdamStudio.Core.AvalonDock.Model;
+﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
+using AdamStudio.Factories;
 using AdamStudio.Model;
 using AdamStudio.ViewModels;
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -20,7 +23,8 @@ public sealed class PersistenceService : IPersistenceService
     private readonly IDockingManagerProvider mDockingManager;
     private readonly ILayoutSerializerService mLayoutSerializer;
     private readonly IWorkspaceService mWorkspaceService;
-    private readonly IDocumentService mDocumentService;
+    private readonly IEditorTabViewModelFactory mEditorFactory;
+    private readonly IDockWindowService mDockWindowService;
     private readonly ISettingsService mSettingsService;
     private readonly ILogService<PersistenceService> mLoggerService;
 
@@ -35,16 +39,18 @@ public sealed class PersistenceService : IPersistenceService
         IDockingManagerProvider managerProvider,
         ILayoutSerializerService layoutSerializer,
         IWorkspaceService workspaceService,
-        IDocumentService documentService,
-        ISettingsService settingsService,
+        IEditorTabViewModelFactory editorFactory,
         IDockEventBinder dockEventBinder,
+        ISettingsService settingsService,
+        IDockWindowService dockWindowService,
         ILogService<PersistenceService> loggerService)
     {
         mDockingManager = managerProvider;
         mLayoutSerializer = layoutSerializer;
         mWorkspaceService = workspaceService;
-        mDocumentService = documentService;
+        mEditorFactory = editorFactory;
         mSettingsService = settingsService;
+        mDockWindowService = dockWindowService;
         mLoggerService = loggerService;
 
         mSettingsService.Current.PropertyChanged += SettingsPropertyChanged;
@@ -93,7 +99,8 @@ public sealed class PersistenceService : IPersistenceService
 
         foreach (WorkspaceDocument d in state.Documents)
         {
-            _ = mDocumentService.LoadDocumentState(d);
+            var doc = mEditorFactory.LoadDocumentState(d);
+            mDockWindowService.OpenDocument(doc);
         }
 
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
@@ -102,6 +109,7 @@ public sealed class PersistenceService : IPersistenceService
     private void RestoreLayout()
     {
         var manager = mDockingManager.Manager;
+
         if (manager is null)
         {
             mLoggerService.LogWarning("DockingManager не загружен — восстановление layout невозможно.");
@@ -122,13 +130,16 @@ public sealed class PersistenceService : IPersistenceService
                 if (mLayoutSerializer.Deserialize(manager, LayoutFilePath))
                 {
                     mLoggerService.LogInformation($"Layout восстановлен: {LayoutFilePath}");
+                    
+                    if (manager.ActiveContent is DocumentViewModelBase activeDoc)
+                        mDockWindowService.ActivateDocument(activeDoc);
 
-                    if (manager.ActiveContent is EditorTabViewModel activeDoc)
+                    /*if (manager.ActiveContent is EditorTabViewModel activeDoc)
                     {
-                        mDocumentService.Activate(activeDoc);
+                        mDockWindowService.ActivateDocument(activeDoc);
                         mLoggerService.LogInformation($"Восстановлен активный документ: {activeDoc.Title}");
                         return;
-                    }
+                    }*/
 
                     return;
                 }
@@ -186,7 +197,7 @@ public sealed class PersistenceService : IPersistenceService
     {
         var state = new WorkspaceState();
        
-        foreach (EditorTabViewModel doc in mDocumentService.Documents)
+        foreach (EditorTabViewModel doc in mDockWindowService.Documents.Cast<EditorTabViewModel>())
         {
             state.Documents.Add(new WorkspaceDocument
             {
