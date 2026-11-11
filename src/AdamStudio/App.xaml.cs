@@ -6,6 +6,7 @@ using AdamStudio.Factories;
 using AdamStudio.Services;
 using AdamStudio.ViewModels;
 using AdamStudio.Views;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -61,8 +62,9 @@ public partial class App : Application
                 services.AddSingleton<IDialogService, DialogService>();
                 services.AddSingleton<IFileService, FileService>();
                 services.AddSingleton<IWorkspaceService, WorkspaceService>();
-                
 
+                // Слабосвязанные сообщения
+                services.AddSingleton<IMessenger, WeakReferenceMessenger>();
                 // Holder для DockingManager
                 services.AddSingleton<IDockingManagerProvider, DockingManagerProvider>();
 
@@ -93,8 +95,11 @@ public partial class App : Application
                 services.AddTransient<EditorTabViewModel>();
 
                 // --- Документы: каждый раз один экземпляр (singleton) ---
-                services.AddSettingsDocument();
+                //services.AddSettingsDocument();
                 //services.AddSingleton<SettingsViewModel>();
+
+                services.AddSingleton<SettingsViewModel>();
+                
 
                 // --- Панели (один экземпляр на всё приложение) ---
                 services.AddSingleton<PropertiesToolboxViewModel>();
@@ -117,6 +122,8 @@ public partial class App : Application
     {
         await mHost.StartAsync();
 
+        _ = mHost.Services.GetRequiredService<SettingsViewModel>();
+
         var mainWindow = mHost.Services.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
@@ -125,9 +132,6 @@ public partial class App : Application
 
     protected override async void OnExit(ExitEventArgs e)
     {
-        //var vm = mHost.Services.GetService<MainViewModel>();
-        //vm?.OnApplicationExiting();
-
         await mHost.StopAsync();
         mHost.Dispose();
         Log.CloseAndFlush();

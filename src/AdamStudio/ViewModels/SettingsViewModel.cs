@@ -1,19 +1,38 @@
 ﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
+using AdamStudio.Extensions;
+using CommunityToolkit.Mvvm.Messaging;
 
 namespace AdamStudio.ViewModels
 {
-    public class SettingsViewModel : DocumentViewModelBase
+    public class SettingsViewModel : DocumentViewModelBase, IRecipient<OpenSettingsMessage>
     {
         public ISettingsService SettingsService { get; }
 
-        public SettingsViewModel(ISettingsService settingsService)
+        private readonly IDockWindowService mDockWindowService;
+
+        public SettingsViewModel(ISettingsService settingsService, IDockWindowService dockWindowService, IMessenger messenger)
         {
             SettingsService = settingsService;
+            mDockWindowService = dockWindowService;
 
             Title = "Настройки";
             ContentId = nameof(SettingsViewModel); 
             ToolTip = "Настройки приложения";
+
+            messenger.RegisterAll(this);
+        }
+
+        public void Receive(OpenSettingsMessage message)
+        {
+            if (mDockWindowService.Documents.Contains(this))
+                mDockWindowService.ActivateDocument(this);
+            else
+            {
+                mDockWindowService.OpenDocument(this);
+                mDockWindowService.ActivateDocument(this);
+            }
         }
 
 
