@@ -103,11 +103,6 @@ public sealed class PersistenceService : IPersistenceService
             mDockWindowService.OpenDocument(doc);
         }
 
-        /*var activeDoc = mDockWindowService?.Documents?.FirstOrDefault(x => x.IsActive);
-
-        if(activeDoc != null)
-            mDockWindowService?.ActivateDocument(activeDoc);*/
-
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
     }
 
@@ -139,9 +134,13 @@ public sealed class PersistenceService : IPersistenceService
                     if (manager.ActiveContent is DocumentViewModelBase activeDoc)
                     {
                         mDockWindowService.ActivateDocument(activeDoc);
+
                         mLoggerService.LogInformation($"Активный документ восстановлен: {activeDoc.Title}");
+
+                        return;
                     }
-                        
+
+                    mLoggerService.LogInformation($"Активных документов для восстановления не обнаружено");
 
                     return;
                 }

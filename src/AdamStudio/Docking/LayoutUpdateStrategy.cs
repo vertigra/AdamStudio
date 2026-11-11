@@ -12,7 +12,7 @@ namespace AdamStudio.Docking
     /// Используется ТОЛЬКО для первичного позиционирования (при старте или первой регистрации).
     /// Для Show/Hide во время работы используется ToolboxService.
     /// </summary>
-    [Obsolete("Использует view model нужно изменить на T")]
+    [Obsolete("Нужно переместить в Core.AvalonDock")]
     public sealed class LayoutUpdateStrategy : ILayoutUpdateStrategy
     {
         public bool BeforeInsertDocument(LayoutRoot layout, LayoutDocument document, ILayoutContainer destinationContainer)

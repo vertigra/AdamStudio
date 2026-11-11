@@ -73,27 +73,34 @@
                 <MenuItem Header="Свойства"  Command="{Binding TogglePropertiesCommand}" />
                 <MenuItem Header="Вывод" Command="{Binding ToggleOutputCommand}" />
             </MenuItem>
-            <MenuItem Header="Темы" ItemsSource="{Binding AvailableThemes}">
-                <MenuItem.ItemContainerStyle>
-                    <Style TargetType="MenuItem">
-                        <Setter Property="Header"           Value="{Binding DisplayName}" />
-                        <Setter Property="Command"          Value="{Binding DataContext.SetThemeCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
-                        <Setter Property="CommandParameter" Value="{Binding Name}" />
-                        <!-- IsCheckable убран -->
-                        <Style.Triggers>
-                            <DataTrigger Value="True">
-                                <DataTrigger.Binding>
-                                    <MultiBinding Converter="{StaticResource ThemeNameToBoolConverter}">
-                                        <Binding Path="DataContext.CurrentThemeName" RelativeSource="{RelativeSource AncestorType=Window}" />
-                                        <Binding Path="Name" />
-                                    </MultiBinding>
-                                </DataTrigger.Binding>
-                                <Setter Property="IsChecked" Value="True" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </MenuItem.ItemContainerStyle>
+            <MenuItem Header="_Настройки">
+                <MenuItem Header="Параметры"  Command="{Binding OpenSettingsCommand}" />
+
+                <MenuItem Header="Темы" ItemsSource="{Binding AvailableThemes}">
+
+                    <MenuItem.ItemContainerStyle>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Header" Value="{Binding DisplayName}" />
+                            <Setter Property="Command" Value="{Binding DataContext.SetThemeCommand, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <Setter Property="CommandParameter" Value="{Binding Name}" />
+
+                            <Style.Triggers>
+                                <DataTrigger Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding Converter="{StaticResource ThemeNameToBoolConverter}">
+                                            <Binding Path="DataContext.CurrentThemeName" RelativeSource="{RelativeSource AncestorType=Window}" />
+                                            <Binding Path="Name" />
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <Setter Property="IsChecked" Value="True" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.ItemContainerStyle>
+                </MenuItem>
+
             </MenuItem>
+            
         </Menu>
 
         <!-- Классический DockingManager с DocumentsSource/AnchorablesSource (v4-стиль).

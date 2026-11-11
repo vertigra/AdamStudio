@@ -3,10 +3,12 @@ using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
 using AdamStudio.Core.Services.AvalonDock;
+using AdamStudio.Extensions;
 using AdamStudio.Factories;
 using AdamStudio.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -28,6 +30,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IFileService mFileService;
     private readonly IDialogService mDialogService;
+    private readonly IMessenger mMessenger;
 
     #endregion
 
@@ -39,7 +42,8 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         ILogService<MainViewModel> logService,
         IEditorTabViewModelFactory editorFactory,
         IFileService fileService,
-        IDialogService dialogService)
+        IDialogService dialogService,
+        IMessenger messenger)
     {
         mToolboxService = toolboxService;
         mThemeService = themeService;
@@ -49,10 +53,11 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         mEditorFactory = editorFactory;
         mFileService = fileService;
         mDialogService = dialogService;
+        mMessenger = messenger;
 
         // Регистрируем стартовые панели
-        mToolboxService.Register<PropertiesToolbox>();
-        mToolboxService.Register<OutputToolbox>();
+        mToolboxService.Register<PropertiesToolboxViewModel>();
+        mToolboxService.Register<OutputToolboxViewModel>();
 
         mLogService.LogInformation("Приложение запущено.");
 
@@ -98,6 +103,7 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
         }
 
     }
+
     // --- Команды ---
 
     [RelayCommand]
@@ -165,11 +171,20 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     private bool CanSaveOrClose() => ActiveDocument is not null;
 
-    [RelayCommand]
-    private void ToggleProperties() => mToolboxService.Toggle<PropertiesToolbox>();
 
     [RelayCommand]
-    private void ToggleOutput() => mToolboxService.Toggle<OutputToolbox>();
+    private void OpenSettings()
+    {
+        mMessenger.Send(new OpenSettingsMessage());
+    }
+
+    [RelayCommand]
+    private void ToggleProperties() => mToolboxService.Toggle<PropertiesToolboxViewModel>();
+
+    [RelayCommand]
+    private void ToggleOutput() => mToolboxService.Toggle<OutputToolboxViewModel>();
+
+
 
     [RelayCommand]
     private void Exit() => Application.Current.Shutdown();

@@ -7,9 +7,9 @@ namespace AdamStudio.ViewModels;
 /// <summary>
 /// Панель «Свойства» — закрепляется справа.
 /// </summary>
-public sealed partial class PropertiesToolbox : ToolViewModelBase
+public sealed partial class PropertiesToolboxViewModel : ToolViewModelBase
 {
-    public PropertiesToolbox() : base("Свойства", "PropertiesTool")
+    public PropertiesToolboxViewModel() : base("Свойства", nameof(PropertiesToolboxViewModel))
     {
         PreferredSide = AnchorSide.Right;
     }

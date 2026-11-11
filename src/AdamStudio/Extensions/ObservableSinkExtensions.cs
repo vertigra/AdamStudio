@@ -2,9 +2,7 @@
 using Serilog.Configuration;
 using Serilog.Core;
 using Serilog.Events;
-using Serilog.Formatting;
 using System.Collections.ObjectModel;
-using System.IO;
 using System.Windows;
 
 namespace AdamStudio.Extensions

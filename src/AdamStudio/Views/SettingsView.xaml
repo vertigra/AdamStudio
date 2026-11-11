@@ -1,0 +1,36 @@
+﻿<UserControl x:Class="AdamStudio.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:AdamStudio.Views">
+    <ScrollViewer Padding="16">
+        <StackPanel Margin="8" Width="400" HorizontalAlignment="Left">
+
+            <TextBlock Text="Настройки приложения" FontWeight="Bold" FontSize="16" Margin="0,0,0,16"/>
+
+            <!-- Редактор -->
+            <GroupBox Header="Редактор" Padding="8" Margin="0,0,0,8">
+                <StackPanel>
+                    <Label Content="Шрифт:" />
+                    <TextBox Text="{Binding SettingsService.Current.EditorFontFamily, Mode=TwoWay}" Margin="0,0,0,8" />
+
+                    <Label Content="Размер шрифта:" />
+                    <TextBox Text="{Binding SettingsService.Current.EditorFontSize, Mode=TwoWay}" Margin="0,0,0,8" />
+                </StackPanel>
+            </GroupBox>
+
+            <!-- Логи -->
+            <GroupBox Header="Логирование" Padding="8" Margin="0,0,0,8">
+                <StackPanel>
+                    <Label Content="Уровень логов (UI):" />
+                    <TextBox Text="{Binding SettingsService.Current.OutputLogLevel, Mode=TwoWay}" Margin="0,0,0,8" />
+
+                    <Label Content="Уровень логов (Глобально):" />
+                    <TextBox Text="{Binding SettingsService.Current.GlobalLogLevel, Mode=TwoWay}" Margin="0,0,0,8" />
+                </StackPanel>
+            </GroupBox>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

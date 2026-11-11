@@ -92,9 +92,13 @@ public partial class App : Application
                 // --- Документы: каждый раз новый экземпляр (transient) ---
                 services.AddTransient<EditorTabViewModel>();
 
+                // --- Документы: каждый раз один экземпляр (singleton) ---
+                services.AddSettingsDocument();
+                //services.AddSingleton<SettingsViewModel>();
+
                 // --- Панели (один экземпляр на всё приложение) ---
-                services.AddSingleton<PropertiesToolbox>();
-                services.AddSingleton<OutputToolbox>();
+                services.AddSingleton<PropertiesToolboxViewModel>();
+                services.AddSingleton<OutputToolboxViewModel>();
 
                 // --- Главная ViewModel ---
                 services.AddSingleton<MainViewModel>();

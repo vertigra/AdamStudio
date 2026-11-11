@@ -8,16 +8,16 @@ namespace AdamStudio.ViewModels;
 /// <summary>
 /// Панель «Вывод» — закрепляется снизу, логирует сообщения приложения.
 /// </summary>
-public sealed partial class OutputToolbox : ToolViewModelBase
+public sealed partial class OutputToolboxViewModel : ToolViewModelBase
 {
 
     #region Services
 
-    private readonly ILogService<OutputToolbox> mLogService;
+    private readonly ILogService<OutputToolboxViewModel> mLogService;
 
     #endregion
 
-    public OutputToolbox(ILogService<OutputToolbox> logService) : base("Вывод", "OutputTool")
+    public OutputToolboxViewModel(ILogService<OutputToolboxViewModel> logService) : base("Вывод", nameof(OutputToolboxViewModel))
     {
         mLogService = logService;
         PreferredSide = AnchorSide.Right;

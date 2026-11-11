@@ -15,12 +15,16 @@
             <views:EditorTabView />
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:PropertiesToolbox}">
+        <DataTemplate DataType="{x:Type vm:PropertiesToolboxViewModel}">
             <views:PropertiesToolView />
         </DataTemplate>
 
-        <DataTemplate DataType="{x:Type vm:OutputToolbox}">
+        <DataTemplate DataType="{x:Type vm:OutputToolboxViewModel}">
             <views:OutputToolView />
+        </DataTemplate>
+
+        <DataTemplate DataType="{x:Type vm:SettingsViewModel}">
+            <views:SettingsView />
         </DataTemplate>
 
     </Application.Resources>
