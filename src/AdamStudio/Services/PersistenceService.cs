@@ -4,6 +4,7 @@ using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
 using AdamStudio.Factories;
 using AdamStudio.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -25,6 +26,8 @@ public sealed class PersistenceService : IPersistenceService
     private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IDockWindowService mDockWindowService;
     private readonly ISettingsService mSettingsService;
+
+    private readonly IServiceProvider mServiceProvider;
     private readonly ILogService<PersistenceService> mLoggerService;
 
     private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
@@ -42,6 +45,7 @@ public sealed class PersistenceService : IPersistenceService
         IDockEventBinder dockEventBinder,
         ISettingsService settingsService,
         IDockWindowService dockWindowService,
+        IServiceProvider serviceProvider,
         ILogService<PersistenceService> loggerService)
     {
         mDockingManager = managerProvider;
@@ -50,6 +54,7 @@ public sealed class PersistenceService : IPersistenceService
         mEditorFactory = editorFactory;
         mSettingsService = settingsService;
         mDockWindowService = dockWindowService;
+        mServiceProvider = serviceProvider;
         mLoggerService = loggerService;
 
         mSettingsService.Current.PropertyChanged += SettingsPropertyChanged;
@@ -99,8 +104,24 @@ public sealed class PersistenceService : IPersistenceService
 
         foreach (WorkspaceDocument d in state.Documents)
         {
-            var doc = mEditorFactory.LoadDocumentState(d);
-            mDockWindowService.OpenDocument(doc);
+            //EditorTabViewModel doc = mEditorFactory.LoadDocumentState(d);
+            //mDockWindowService.OpenDocument(doc);
+
+            DocumentViewModelBase? doc = null;
+
+            // Восстанавливаем в зависимости от типа
+            if (d.DocumentTypeName == typeof(EditorTabViewModel).FullName)
+            {
+                doc = mEditorFactory.LoadDocumentState(d);
+            }
+            else if (d.DocumentTypeName == typeof(SettingsViewModel).FullName)
+            {
+                // Для настроек берём синглтон из DI
+                doc = mServiceProvider.GetRequiredService<SettingsViewModel>();
+            }
+
+            if (doc != null)
+                mDockWindowService.OpenDocument(doc);
         }
 
         mLoggerService.LogInformation($"Восстановлено документов: {state.Documents.Count}");
@@ -197,18 +218,26 @@ public sealed class PersistenceService : IPersistenceService
     private void SaveWorkspace()
     {
         var state = new WorkspaceState();
-       
-        foreach (EditorTabViewModel doc in mDockWindowService.Documents.Cast<EditorTabViewModel>())
+
+        foreach (var doc in mDockWindowService.Documents)
         {
-            state.Documents.Add(new WorkspaceDocument
+            var workspaceDocument = new WorkspaceDocument
             {
                 ContentId = doc.ContentId,
                 Title = doc.Title,
-                FilePath = string.IsNullOrEmpty(doc.FilePath) ? null : doc.FilePath,
-                Content = doc.Content,
                 IsActive = doc.IsActive,
                 IsModified = doc.IsModified,
-            });
+                DocumentTypeName = doc.GetType().FullName ?? "Undefined" // Сохраняем тип, чтобы знать, что создавать при загрузке
+            };
+
+            // Если это текстовый редактор — сохраняем текст и путь
+            if (doc is EditorTabViewModel editor)
+            {
+                workspaceDocument.FilePath = string.IsNullOrEmpty(editor.FilePath) ? null : editor.FilePath;
+                workspaceDocument.Content = editor.Content;
+            }
+
+            state.Documents.Add(workspaceDocument);
         }
 
         mWorkspaceService.Save(WorkspaceFilePath, state);

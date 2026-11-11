@@ -22,6 +22,13 @@ namespace AdamStudio.ViewModels
             ToolTip = "Настройки приложения";
 
             messenger.RegisterAll(this);
+
+            SettingsService.Current.PropertyChanged += SettingsChanged;
+        }
+
+        private void SettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            IsModified = true;
         }
 
         public void Receive(OpenSettingsMessage message)

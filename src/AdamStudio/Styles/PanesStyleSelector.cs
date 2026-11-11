@@ -1,5 +1,5 @@
 using AdamStudio.Core.AvalonDock.BaseViewModels;
-using AdamStudio.ViewModels;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -10,6 +10,7 @@ namespace AdamStudio.Styles;
 /// (Title, ContentId, ToolTip) с соответствующими свойствами LayoutItem.
 /// Применяется через LayoutItemContainerStyleSelector.
 /// </summary>
+[Obsolete("Нужно переместить в Core.AvalonDock")]
 public sealed class PanesStyleSelector : StyleSelector
 {
     public Style? ToolboxStyle { get; set; }
@@ -20,7 +21,7 @@ public sealed class PanesStyleSelector : StyleSelector
         if (item is ToolViewModelBase)
             return ToolboxStyle;
 
-        if (item is EditorTabViewModel)
+        if (item is DocumentViewModelBase)
             return DocumentStyle;
 
         return base.SelectStyle(item, container);

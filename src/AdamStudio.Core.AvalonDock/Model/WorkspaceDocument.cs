@@ -11,5 +11,6 @@
         public string Content { get; set; } = string.Empty;
         public bool IsModified { get; set; }
         public bool IsActive { get; set; }
+        public string DocumentTypeName { get; set; } = string.Empty;
     }
 }
