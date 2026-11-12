@@ -1,7 +1,7 @@
 ﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
-using AdamStudio.Extensions;
+using AdamStudio.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 
 namespace AdamStudio.ViewModels

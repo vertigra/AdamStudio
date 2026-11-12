@@ -31,20 +31,6 @@ public partial class App : Application
             .AddJsonFile(settingsService.SettingsFileName, optional: false, reloadOnChange: true)
             .Build();
 
-        // 2. Создаём Serilog logger из конфигурации
-        //    ObservableSink добавляем программно — он ссылается на _uiLogLines
-        /*Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(configuration)
-            .MinimumLevel.Verbose()  // Пропускаем ВСЕ сообщения в пайплайн
-            .WriteTo.Async(a => a.File("logs/app.log",
-                                rollingInterval: RollingInterval.Day,
-                                retainedFileCountLimit: 14,
-                                levelSwitch: settingsService.GlobalLevelSwitch,  // ← File sink фильтруется через GlobalLevelSwitch
-                                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"))
-
-            .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
-            .CreateLogger();*/
-
         var settings = settingsService.Current;
 
         Log.Logger = new LoggerConfiguration()
@@ -57,8 +43,7 @@ public partial class App : Application
                 rollingInterval: RollingInterval.Day,
                 retainedFileCountLimit: settings.RetainedFileCountLimit,
                 levelSwitch: settingsService.GlobalLevelSwitch,
-                outputTemplate: settings.FileLogTemplate
-            ))
+                outputTemplate: settings.FileLogTemplate))
             .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
             .CreateLogger();
 
@@ -81,6 +66,7 @@ public partial class App : Application
                 services.AddSingleton(typeof(ILogService<>), typeof(LogService<>));
 
                 services.AddSingleton<IPersistenceService, PersistenceService>();
+                
                 // --- Сервисы приложения ---
 
                 services.AddSingleton<IDialogService, DialogService>();
@@ -89,6 +75,7 @@ public partial class App : Application
 
                 // Слабосвязанные сообщения
                 services.AddSingleton<IMessenger, WeakReferenceMessenger>();
+                
                 // Holder для DockingManager
                 services.AddSingleton<IDockingManagerProvider, DockingManagerProvider>();
 
@@ -118,13 +105,8 @@ public partial class App : Application
                 // --- Документы: каждый раз новый экземпляр (transient) ---
                 services.AddTransient<EditorTabViewModel>();
 
-                // --- Документы: каждый раз один экземпляр (singleton) ---
-                //services.AddSettingsDocument();
-                //services.AddSingleton<SettingsViewModel>();
-
                 services.AddSingleton<SettingsViewModel>();
                 
-
                 // --- Панели (один экземпляр на всё приложение) ---
                 services.AddSingleton<PropertiesToolboxViewModel>();
                 services.AddSingleton<OutputToolboxViewModel>();
@@ -138,9 +120,6 @@ public partial class App : Application
             .UseSerilog()
             .Build();
     }
-
-    //public static new App Current => (App)Application.Current;
-    //public IServiceProvider Services => mHost.Services;
 
     protected override async void OnStartup(StartupEventArgs e)
     {

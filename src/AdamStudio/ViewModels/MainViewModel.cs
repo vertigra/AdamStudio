@@ -5,6 +5,7 @@ using AdamStudio.Core.Services;
 using AdamStudio.Core.Services.AvalonDock;
 using AdamStudio.Extensions;
 using AdamStudio.Factories;
+using AdamStudio.Messages;
 using AdamStudio.Services;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
