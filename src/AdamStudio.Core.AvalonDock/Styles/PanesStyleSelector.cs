@@ -1,16 +1,14 @@
 using AdamStudio.Core.AvalonDock.BaseViewModels;
-using System;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace AdamStudio.Styles;
+namespace AdamStudio.Core.AvalonDock.Styles;
 
 /// <summary>
 /// StyleSelector для LayoutItem — связывает свойства ViewModel
 /// (Title, ContentId, ToolTip) с соответствующими свойствами LayoutItem.
 /// Применяется через LayoutItemContainerStyleSelector.
 /// </summary>
-[Obsolete("Нужно переместить в Core.AvalonDock")]
 public sealed class PanesStyleSelector : StyleSelector
 {
     public Style? ToolboxStyle { get; set; }

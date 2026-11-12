@@ -1,22 +1,18 @@
 using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AvalonDock.Layout;
-using System;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
-namespace AdamStudio.Docking
+namespace AdamStudio.Core.AvalonDock.Docking
 {
     /// <summary>
     /// Стратегия размещения новых панелей при добавлении в AnchorablesSource.
     /// Используется ТОЛЬКО для первичного позиционирования (при старте или первой регистрации).
     /// Для Show/Hide во время работы используется ToolboxService.
     /// </summary>
-    [Obsolete("Нужно переместить в Core.AvalonDock")]
     public sealed class LayoutUpdateStrategy : ILayoutUpdateStrategy
     {
-        public bool BeforeInsertDocument(LayoutRoot layout, LayoutDocument document, ILayoutContainer destinationContainer)
-            => false;
+        public bool BeforeInsertDocument(LayoutRoot layout, LayoutDocument document, ILayoutContainer destinationContainer) => false;
 
         public void AfterInsertDocument(LayoutRoot layout, LayoutDocument document) { }
 

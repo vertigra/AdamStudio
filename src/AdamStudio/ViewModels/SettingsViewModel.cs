@@ -43,8 +43,12 @@ namespace AdamStudio.ViewModels
         }
 
 
-        // Настройки сохраняются автоматически через ISettingsService при изменении свойств.
-        // Команда "Сохранить" в MainViewModel просто вызовет этот метод, который сбросит IsModified.
+
+
+        /// <summary>
+        /// Настройки сохраняются автоматически через ISettingsService при изменении свойств.
+        /// Команда "Сохранить" в MainViewModel просто вызовет этот метод, который сбросит IsModified.
+        /// </summary>
         public override bool SaveToFile()
         {
             IsModified = false;

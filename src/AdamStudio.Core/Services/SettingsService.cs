@@ -4,8 +4,9 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using System.ComponentModel;
+using System.Reflection;
+using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 
 namespace AdamStudio.Core.Services;
 
@@ -55,7 +56,12 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
             mIsLoading = true;
 
             if (!File.Exists(SettingsFilePath))
+            {
+                ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
+                ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
                 return;
+            }
+                
 
             var json = File.ReadAllText(SettingsFilePath);
             using var doc = JsonDocument.Parse(json);
@@ -92,34 +98,51 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
     {
         try
         {
-            JsonObject root;
-            if (File.Exists(SettingsFilePath))
-            {
-                var json = File.ReadAllText(SettingsFilePath);
-                root = JsonSerializer.Deserialize<JsonObject>(json) ?? [];
-            }
-            else
-            {
-                root = [];
-            }
+            using var stream = new MemoryStream();
+            using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
 
-            var appNode = new JsonObject();
-            
+            writer.WriteStartObject();
+            writer.WriteStartObject("App");
+
             var props = typeof(AppSettings).GetProperties();
-
             foreach (var prop in props)
             {
+                var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
+                if (descAttr != null)
+                    writer.WriteCommentValue($" {descAttr.Description} ");
+
                 var value = prop.GetValue(Current);
-                appNode[prop.Name] = JsonSerializer.SerializeToNode(value, prop.PropertyType);
+                WriteJsonValue(writer, prop.Name, value, prop.PropertyType);
             }
 
-            root["App"] = appNode;
-            File.WriteAllText(SettingsFilePath, JsonSerializer.Serialize(root, new JsonSerializerOptions { WriteIndented = true }));
+            writer.WriteEndObject();
+            writer.WriteEndObject();
+            writer.Flush();
+
+            var json = Encoding.UTF8.GetString(stream.ToArray());
+            File.WriteAllText(SettingsFilePath, json);
         }
-        catch (Exception ex)
+        catch (Exception ex) { Log.Error(ex, "Ошибка сохранения настроек"); }
+    }
+
+    private static void WriteJsonValue(Utf8JsonWriter writer, string name, object? value, Type type)
+    {
+        if (value == null)
         {
-            Log.Error(ex, "Ошибка сохранения настроек");
+            writer.WriteNull(name);
+            return;
         }
+
+        if (type == typeof(string))
+            writer.WriteString(name, (string)value);
+        else if (type == typeof(int))
+            writer.WriteNumber(name, (int)value);
+        else if (type == typeof(double))
+            writer.WriteNumber(name, (double)value);
+        else if (type == typeof(bool))
+            writer.WriteBoolean(name, (bool)value);
+        else
+            writer.WriteString(name, value.ToString());
     }
 
     private void OnSettingChanged(object? sender, PropertyChangedEventArgs e)

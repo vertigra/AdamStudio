@@ -2,6 +2,7 @@
 using AdamStudio.Core.AvalonDock.EventArguments;
 using AvalonDock.Core.Events;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.Extensions.Logging;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 
@@ -19,13 +20,15 @@ namespace AdamStudio.Core.AvalonDock.Services
 
     public sealed partial class DockWindowService : ObservableObject, IDockWindowService
     {
-        private readonly IDockEventBinder mDockEventBinder;
+        //private readonly IDockEventBinder mDockEventBinder;
+        private readonly ILogger<DockWindowService> mLogger;
 
-        public DockWindowService(IDockEventBinder dockEventBinder)
+        public DockWindowService(IDockEventBinder dockEventBinder, ILogger<DockWindowService> logger)
         {
-            mDockEventBinder = dockEventBinder;
-            mDockEventBinder.ActiveContentChanged += OnActiveContentChanged;
-            mDockEventBinder.DocumentClosing += OnDocumentClosing;
+            mLogger = logger;
+
+            dockEventBinder.ActiveContentChanged += OnActiveContentChanged;
+            dockEventBinder.DocumentClosing += OnDocumentClosing;
         }
 
         public ObservableCollection<DocumentViewModelBase> Documents { get; } = [];
@@ -33,6 +36,13 @@ namespace AdamStudio.Core.AvalonDock.Services
         [ObservableProperty]
         public partial DocumentViewModelBase? ActiveDocument { get; private set; }
 
+        partial void OnActiveDocumentChanged(DocumentViewModelBase? value)
+        {
+            mLogger.LogTrace($"Активный документ {value?.Title ?? "Title не определен"}");
+        }
+
+
+   
         public void OpenDocument(DocumentViewModelBase doc)
         {
             if (Documents.Contains(doc))

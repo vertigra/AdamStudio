@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using Serilog.Events;
 using System.Collections.ObjectModel;
 using System.Windows;
 
@@ -32,9 +33,32 @@ public partial class App : Application
 
         // 2. Создаём Serilog logger из конфигурации
         //    ObservableSink добавляем программно — он ссылается на _uiLogLines
-        Log.Logger = new LoggerConfiguration()
+        /*Log.Logger = new LoggerConfiguration()
             .ReadFrom.Configuration(configuration)
-            .MinimumLevel.ControlledBy(settingsService.GlobalLevelSwitch)
+            .MinimumLevel.Verbose()  // Пропускаем ВСЕ сообщения в пайплайн
+            .WriteTo.Async(a => a.File("logs/app.log",
+                                rollingInterval: RollingInterval.Day,
+                                retainedFileCountLimit: 14,
+                                levelSwitch: settingsService.GlobalLevelSwitch,  // ← File sink фильтруется через GlobalLevelSwitch
+                                outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} {Message:lj}{NewLine}{Exception}"))
+
+            .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
+            .CreateLogger();*/
+
+        var settings = settingsService.Current;
+
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Verbose()
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+            .MinimumLevel.Override("System", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Async(a => a.File(
+                settings.LogFilePath,
+                rollingInterval: RollingInterval.Day,
+                retainedFileCountLimit: settings.RetainedFileCountLimit,
+                levelSwitch: settingsService.GlobalLevelSwitch,
+                outputTemplate: settings.FileLogTemplate
+            ))
             .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
             .CreateLogger();
 

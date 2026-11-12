@@ -99,14 +99,15 @@ public sealed class PersistenceService : IPersistenceService
     {
         WorkspaceState state = mWorkspaceService.Load(WorkspaceFilePath);
 
-        if (state.Documents.Count == 0) 
+        if (state.Documents.Count == 0)
+        {
+            mLoggerService.LogInformation($"Нет документов для восстановления");
             return;
+        }
+            
 
         foreach (WorkspaceDocument d in state.Documents)
         {
-            //EditorTabViewModel doc = mEditorFactory.LoadDocumentState(d);
-            //mDockWindowService.OpenDocument(doc);
-
             DocumentViewModelBase? doc = null;
 
             // Восстанавливаем в зависимости от типа
@@ -118,6 +119,9 @@ public sealed class PersistenceService : IPersistenceService
             {
                 // Для настроек берём синглтон из DI
                 doc = mServiceProvider.GetRequiredService<SettingsViewModel>();
+                // восстанавливаем динамичные настройки, остальные статичны и смысла их восстанавливать нет
+                doc.IsActive = d.IsActive;
+                doc.IsModified = d.IsModified;
             }
 
             if (doc != null)
@@ -228,6 +232,7 @@ public sealed class PersistenceService : IPersistenceService
                 IsActive = doc.IsActive,
                 IsModified = doc.IsModified,
                 DocumentTypeName = doc.GetType().FullName ?? "Undefined" // Сохраняем тип, чтобы знать, что создавать при загрузке
+
             };
 
             // Если это текстовый редактор — сохраняем текст и путь
