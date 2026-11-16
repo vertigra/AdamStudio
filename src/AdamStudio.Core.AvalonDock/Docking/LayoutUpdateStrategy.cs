@@ -1,4 +1,4 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.AvalonDock.ViewModels;
 using AvalonDock.Layout;
 using System.Windows;
 using System.Windows.Controls;
@@ -18,7 +18,7 @@ namespace AdamStudio.Core.AvalonDock.Docking
 
         public bool BeforeInsertAnchorable(LayoutRoot layout, LayoutAnchorable anchorable, ILayoutContainer destinationContainer)
         {
-            if (anchorable.Content is not ToolViewModelBase tool)
+            if (anchorable.Content is not AvalonToolViewModel tool)
                 return false;
 
             // Ищем существующую ОТКРЫТУЮ pane на нужной стороне

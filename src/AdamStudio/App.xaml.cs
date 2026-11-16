@@ -50,13 +50,13 @@ public partial class App : Application
         mHost = Host.CreateDefaultBuilder()
             .ConfigureServices((_, services) =>
             {
-                services.AddSingleton(sp => sp);
+                //services.AddSingleton(sp => sp);
 
                 services.AddSingleton<ISettingsService>(settingsService);
                 services.AddSingleton<IConfiguration>(configuration);
 
                 // Serilog.ILogger — глобальный логер
-                services.AddSingleton(_ => Log.Logger);
+                services.AddSingleton(Log.Logger);
                 services.AddLogging(loggingBuilder => loggingBuilder.AddSerilog(dispose: true));
 
                 // Базовый логер (без контекста) — для тех, кому не нужен SourceContext

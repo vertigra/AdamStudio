@@ -1,4 +1,4 @@
-﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
+﻿using AdamStudio.Core.AvalonDock.ViewModels;
 using AdamStudio.Core.AvalonDock.EventArguments;
 using AvalonDock.Core.Events;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,12 +10,12 @@ namespace AdamStudio.Core.AvalonDock.Services
 {
     public interface IDockWindowService : INotifyPropertyChanged
     {
-        ObservableCollection<DocumentViewModelBase> Documents { get; }
-        DocumentViewModelBase? ActiveDocument { get;  }
+        ObservableCollection<AvalonDocumentViewModel> Documents { get; }
+        AvalonDocumentViewModel? ActiveDocument { get;  }
 
-        void OpenDocument(DocumentViewModelBase doc);
-        void ActivateDocument(DocumentViewModelBase doc);
-        bool CloseDocument(DocumentViewModelBase doc);
+        void OpenDocument(AvalonDocumentViewModel doc);
+        void ActivateDocument(AvalonDocumentViewModel doc);
+        bool CloseDocument(AvalonDocumentViewModel doc);
     }
 
     public sealed partial class DockWindowService : ObservableObject, IDockWindowService
@@ -31,19 +31,17 @@ namespace AdamStudio.Core.AvalonDock.Services
             dockEventBinder.DocumentClosing += OnDocumentClosing;
         }
 
-        public ObservableCollection<DocumentViewModelBase> Documents { get; } = [];
+        public ObservableCollection<AvalonDocumentViewModel> Documents { get; } = [];
 
         [ObservableProperty]
-        public partial DocumentViewModelBase? ActiveDocument { get; private set; }
+        public partial AvalonDocumentViewModel? ActiveDocument { get; private set; }
 
-        partial void OnActiveDocumentChanged(DocumentViewModelBase? value)
+        partial void OnActiveDocumentChanged(AvalonDocumentViewModel? value)
         {
             mLogger.LogTrace($"Активный документ {value?.Title ?? "Title не определен"}");
         }
 
-
-   
-        public void OpenDocument(DocumentViewModelBase doc)
+        public void OpenDocument(AvalonDocumentViewModel doc)
         {
             if (Documents.Contains(doc))
             {
@@ -54,13 +52,13 @@ namespace AdamStudio.Core.AvalonDock.Services
             Documents.Add(doc);
         }
 
-        public void ActivateDocument(DocumentViewModelBase doc)
+        public void ActivateDocument(AvalonDocumentViewModel doc)
         {
             ActiveDocument = doc;
             doc.IsActive = true;
         }
 
-        public bool CloseDocument(DocumentViewModelBase doc)
+        public bool CloseDocument(AvalonDocumentViewModel doc)
         {
             if (!doc.ConfirmClose())
                 return false;
@@ -71,13 +69,13 @@ namespace AdamStudio.Core.AvalonDock.Services
 
         private void OnActiveContentChanged(object? sender, ActiveContentChangedEventArgs e)
         {
-            if (e.NewContent is DocumentViewModelBase doc)
+            if (e.NewContent is AvalonDocumentViewModel doc)
                 ActivateDocument(doc);
         }
 
         private void OnDocumentClosing(object? sender, DocumentCancelEventArgs e)
         {
-            if (e.Document.Content is not DocumentViewModelBase doc) 
+            if (e.Document.Content is not AvalonDocumentViewModel doc) 
                 return;
 
             if (!doc.ConfirmClose())

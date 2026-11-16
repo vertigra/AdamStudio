@@ -1,7 +1,7 @@
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AdamStudio.Core.AvalonDock.BaseViewModels;
+namespace AdamStudio.Core.AvalonDock.ViewModels;
 
 /// <summary>
 /// Базовый класс для панелей-инструментов (Anchorable) в классическом DockingManager.
@@ -12,9 +12,9 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels;
 /// IDockLayoutService (через IToolbox). С классическим DockingManager + 
 /// AnchorablesSource нам нужна просто VM с INotifyPropertyChanged.
 /// </summary>
-public abstract partial class ToolViewModelBase : ObservableObject
+public abstract partial class AvalonToolViewModel : ObservableObject
 {
-    protected ToolViewModelBase(string title, string contentId)
+    protected AvalonToolViewModel(string title, string contentId)
     {
         Title = title;
         ContentId = contentId;

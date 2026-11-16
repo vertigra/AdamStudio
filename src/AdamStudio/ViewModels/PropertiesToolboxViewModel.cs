@@ -1,4 +1,4 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.ViewModels;
 using AvalonDock.Layout;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -7,7 +7,7 @@ namespace AdamStudio.ViewModels;
 /// <summary>
 /// Панель «Свойства» — закрепляется справа.
 /// </summary>
-public sealed partial class PropertiesToolboxViewModel : ToolViewModelBase
+public sealed partial class PropertiesToolboxViewModel : BaseToolboxViewModel
 {
     public PropertiesToolboxViewModel() : base("Свойства", nameof(PropertiesToolboxViewModel))
     {

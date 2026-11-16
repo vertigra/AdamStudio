@@ -1,36 +1,82 @@
 ﻿<UserControl x:Class="AdamStudio.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:AdamStudio.Views">
-    <ScrollViewer Padding="16">
-        <StackPanel Margin="8" Width="400" HorizontalAlignment="Left">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-            <TextBlock Text="Настройки приложения" FontWeight="Bold" FontSize="16" Margin="0,0,0,16"/>
+        <!-- Заголовок + кнопка Сохранить -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock FontWeight="Bold" 
+                       FontSize="16"
+                       Text="Настройки приложения" 
+                       DockPanel.Dock="Left"
+                       VerticalAlignment="Center" />
 
-            <!-- Редактор -->
-            <GroupBox Header="Редактор" Padding="8" Margin="0,0,0,8">
-                <StackPanel>
-                    <Label Content="Шрифт:" />
-                    <TextBox Text="{Binding SettingsService.Current.EditorFontFamily, Mode=TwoWay}" Margin="0,0,0,8" />
+            <!-- Кнопка привязана к SaveFileCommand из MainViewModel через DataContext окна 
+                 Это гавно-->
+            <Button Content="Сохранить"
+                    Padding="12,4"
+                    Margin="8,0,0,0"
+                    Command="{Binding DataContext.SaveFileCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                    DockPanel.Dock="Left" />
+        </DockPanel>
 
-                    <Label Content="Размер шрифта:" />
-                    <TextBox Text="{Binding SettingsService.Current.EditorFontSize, Mode=TwoWay}" Margin="0,0,0,8" />
-                </StackPanel>
-            </GroupBox>
+        <!-- Настройки -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Width="500" HorizontalAlignment="Left">
 
-            <!-- Логи -->
-            <GroupBox Header="Логирование" Padding="8" Margin="0,0,0,8">
-                <StackPanel>
-                    <Label Content="Уровень логов (UI):" />
-                    <TextBox Text="{Binding SettingsService.Current.OutputLogLevel, Mode=TwoWay}" Margin="0,0,0,8" />
+                <!-- Редактор -->
+                <GroupBox Header="Редактор" Padding="12" Margin="0,0,0,8">
+                    <StackPanel>
+                        <Label Content="Шрифт:" />
+                        <TextBox  Margin="0,0,0,12" 
+                                  Text="{Binding SettingsService.Current.EditorFontFamily, 
+                                                 Mode=TwoWay, 
+                                                 UpdateSourceTrigger=PropertyChanged}"  />
 
-                    <Label Content="Уровень логов (Глобально):" />
-                    <TextBox Text="{Binding SettingsService.Current.GlobalLogLevel, Mode=TwoWay}" Margin="0,0,0,8" />
-                </StackPanel>
-            </GroupBox>
+                        <Label Content="Размер шрифта:" />
+                        <TextBox Margin="0,0,0,12"
+                                 Text="{Binding SettingsService.Current.EditorFontSize, 
+                                                Mode=TwoWay, 
+                                                UpdateSourceTrigger=PropertyChanged}" />
+                    </StackPanel>
+                </GroupBox>
 
-        </StackPanel>
-    </ScrollViewer>
+                <!-- Логи -->
+                <GroupBox Header="Логирование" Padding="12" Margin="0,0,0,8">
+                    <StackPanel>
+                        <Label Content="Уровень логов (UI):" />
+                        <TextBox Margin="0,0,0,12"
+                                 Text="{Binding SettingsService.Current.OutputLogLevel, 
+                                                Mode=TwoWay,
+                                                UpdateSourceTrigger=PropertyChanged}"  />
+
+                        <Label Content="Уровень логов (Глобально):" />
+                        <TextBox Margin="0,0,0,12" 
+                                 Text="{Binding SettingsService.Current.GlobalLogLevel, 
+                                                Mode=TwoWay, 
+                                                UpdateSourceTrigger=PropertyChanged}"  />
+
+                        <Label Content="Путь к файлу логов:" />
+                        <TextBox Margin="0,0,0,12" 
+                                 IsReadOnly="True" 
+                                 Text="{Binding SettingsService.Current.LogFilePath, 
+                                                Mode=TwoWay, 
+                                                UpdateSourceTrigger=PropertyChanged}"  />
+
+                        <Label Content="Дней хранения:" />
+                        <TextBox Margin="0,0,0,12" 
+                                 IsReadOnly="True" 
+                                 Text="{Binding SettingsService.Current.RetainedFileCountLimit, 
+                                                Mode=TwoWay, 
+                                                UpdateSourceTrigger=PropertyChanged}"  />
+                    </StackPanel>
+                </GroupBox>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

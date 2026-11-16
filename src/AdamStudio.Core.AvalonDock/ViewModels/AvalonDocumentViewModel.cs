@@ -1,11 +1,11 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AdamStudio.Core.AvalonDock.BaseViewModels
+namespace AdamStudio.Core.AvalonDock.ViewModels
 {
     /// <summary>
     /// Базовая виев модель для документов в понимании Avalon Dock
     /// </summary>
-    public partial class DocumentViewModelBase : ObservableObject
+    public partial class AvalonDocumentViewModel : ObservableObject
     {
         [ObservableProperty]
         public partial string ContentId { get; set; } = $"doc-{Guid.NewGuid()}";
@@ -55,6 +55,5 @@ namespace AdamStudio.Core.AvalonDock.BaseViewModels
         /// Подтвердить закрытие. Возвращает false, чтобы отменить.
         /// </summary>
         public virtual bool ConfirmClose() => true;
-
     }
 }

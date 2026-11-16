@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
-namespace AdamStudio.Core.Model;
+namespace AdamStudio.Core.Models;
 
 public sealed partial class AppSettings : ObservableObject
 {

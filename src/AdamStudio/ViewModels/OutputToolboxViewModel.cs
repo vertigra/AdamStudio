@@ -1,5 +1,5 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.Services;
+using AdamStudio.Core.ViewModels;
 using AvalonDock.Layout;
 using System.Collections.ObjectModel;
 
@@ -8,7 +8,7 @@ namespace AdamStudio.ViewModels;
 /// <summary>
 /// Панель «Вывод» — закрепляется снизу, логирует сообщения приложения.
 /// </summary>
-public sealed partial class OutputToolboxViewModel : ToolViewModelBase
+public sealed partial class OutputToolboxViewModel : BaseToolboxViewModel
 {
 
     #region Services

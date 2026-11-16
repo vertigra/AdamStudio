@@ -1,24 +1,25 @@
-﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
-using AdamStudio.Core.AvalonDock.Services;
+﻿using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
+using AdamStudio.Core.ViewModels;
 using AdamStudio.Messages;
 using CommunityToolkit.Mvvm.Messaging;
+using System.ComponentModel;
 
 namespace AdamStudio.ViewModels
 {
-    public class SettingsViewModel : DocumentViewModelBase, IRecipient<OpenSettingsMessage>
+    public class SettingsViewModel : BaseDocumentViewModel, IRecipient<OpenSettingsMessage>
     {
         public ISettingsService SettingsService { get; }
 
         private readonly IDockWindowService mDockWindowService;
 
-        public SettingsViewModel(ISettingsService settingsService, IDockWindowService dockWindowService, IMessenger messenger)
+        public SettingsViewModel(ISettingsService settingsService, IDockWindowService dockWindowService, IMessenger messenger, IDialogService dialogService) : base(dialogService)
         {
             SettingsService = settingsService;
             mDockWindowService = dockWindowService;
 
             Title = "Настройки";
-            ContentId = nameof(SettingsViewModel); 
+            ContentId = nameof(SettingsViewModel);
             ToolTip = "Настройки приложения";
 
             messenger.RegisterAll(this);
@@ -26,7 +27,7 @@ namespace AdamStudio.ViewModels
             SettingsService.Current.PropertyChanged += SettingsChanged;
         }
 
-        private void SettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        private void SettingsChanged(object? sender, PropertyChangedEventArgs e)
         {
             IsModified = true;
         }
@@ -41,9 +42,6 @@ namespace AdamStudio.ViewModels
                 mDockWindowService.ActivateDocument(this);
             }
         }
-
-
-
 
         /// <summary>
         /// Настройки сохраняются автоматически через ISettingsService при изменении свойств.

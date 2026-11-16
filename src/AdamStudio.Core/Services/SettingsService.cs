@@ -1,19 +1,16 @@
-﻿using AdamStudio.Core.Model;
+﻿using AdamStudio.Core.Models;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using System.ComponentModel;
 using System.Reflection;
-using System.Text;
 using System.Text.Json;
 
 namespace AdamStudio.Core.Services;
 
 public interface ISettingsService : INotifyPropertyChanged
 {
-    event EventHandler<PropertyChangedEventArgs> SettingsPropertyChanged;
-
     string SettingsDirectory { get; }
     string SettingsFileName { get; }
     string SettingsFilePath { get; }
@@ -28,7 +25,6 @@ public interface ISettingsService : INotifyPropertyChanged
 
 public sealed partial class SettingsService : ObservableObject, ISettingsService
 {
-    public event EventHandler<PropertyChangedEventArgs>? SettingsPropertyChanged;
     private bool mIsLoading;
 
     public SettingsService()
@@ -39,6 +35,8 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
 
         Current.PropertyChanged += OnSettingChanged;
         Load();
+
+        Log.Information("Test");
     }
 
     public string SettingsDirectory { get; }
@@ -51,6 +49,8 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
 
     public void Load()
     {
+        Log.Information("Load settings");
+
         try
         {
             mIsLoading = true;
@@ -98,52 +98,97 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
     {
         try
         {
-            using var stream = new MemoryStream();
-            using var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true });
+            var tempFile = SettingsFilePath + ".tmp";
 
-            writer.WriteStartObject();
-            writer.WriteStartObject("App");
-
-            var props = typeof(AppSettings).GetProperties();
-            foreach (var prop in props)
+            // Пишем напрямую в файловый поток без промежуточного MemoryStream и string
+            using (var stream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None))
+            using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = true }))
             {
-                var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
-                if (descAttr != null)
-                    writer.WriteCommentValue($" {descAttr.Description} ");
+                writer.WriteStartObject();
+                writer.WriteStartObject("App");
 
-                var value = prop.GetValue(Current);
-                WriteJsonValue(writer, prop.Name, value, prop.PropertyType);
-            }
+                var props = typeof(AppSettings).GetProperties();
+                foreach (var prop in props)
+                {
+                    // Пропускаем индексаторы, если они вдруг появятся в классе
+                    if (prop.GetIndexParameters().Length > 0)
+                        continue;
 
-            writer.WriteEndObject();
-            writer.WriteEndObject();
-            writer.Flush();
+                    var descAttr = prop.GetCustomAttribute<DescriptionAttribute>();
+                    if (descAttr != null)
+                    {
+                        // Защита от падения, если в описании встретится закрывающий тег комментария
+                        var safeComment = descAttr.Description.Replace("*/", "* /");
+                        writer.WriteCommentValue($" {safeComment} ");
+                    }
 
-            var json = Encoding.UTF8.GetString(stream.ToArray());
-            File.WriteAllText(SettingsFilePath, json);
+                    var value = prop.GetValue(Current);
+                    WriteJsonValue(writer, prop.Name, value);
+                }
+
+                writer.WriteEndObject();
+                writer.WriteEndObject();
+            } // Здесь автоматически сработает Dispose и Flush
+
+            // Атомарная замена файла настроек (защита от повреждения файла при сбое)
+            File.Move(tempFile, SettingsFilePath, overwrite: true);
         }
-        catch (Exception ex) { Log.Error(ex, "Ошибка сохранения настроек"); }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Ошибка сохранения настроек");
+        }
     }
 
-    private static void WriteJsonValue(Utf8JsonWriter writer, string name, object? value, Type type)
+    private static void WriteJsonValue(Utf8JsonWriter writer, string name, object? value)
     {
-        if (value == null)
+        if (value is null)
         {
             writer.WriteNull(name);
             return;
         }
 
-        if (type == typeof(string))
-            writer.WriteString(name, (string)value);
-        else if (type == typeof(int))
-            writer.WriteNumber(name, (int)value);
-        else if (type == typeof(double))
-            writer.WriteNumber(name, (double)value);
-        else if (type == typeof(bool))
-            writer.WriteBoolean(name, (bool)value);
-        else
-            writer.WriteString(name, value.ToString());
+        switch (value)
+        {
+            case string s:
+                writer.WriteString(name, s);
+                break;
+            case Enum e:
+                writer.WriteString(name, e.ToString());
+                break;
+            case int i:
+                writer.WriteNumber(name, i);
+                break;
+            case long l:
+                writer.WriteNumber(name, l);
+                break;
+            case decimal dec:
+                writer.WriteNumber(name, dec);
+                break;
+            case double d when double.IsFinite(d):
+                writer.WriteNumber(name, d);
+                break;
+            case float f when float.IsFinite(f):
+                writer.WriteNumber(name, f);
+                break;
+            case double or float:
+                writer.WriteNull(name);
+                break;
+            case bool b:
+                writer.WriteBoolean(name, b);
+                break;
+            case DateTime dt:
+                writer.WriteString(name, dt);
+                break;
+            case Guid g:
+                writer.WriteString(name, g);
+                break;
+            default:
+                writer.WriteString(name, Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture));
+                break;
+        }
     }
+
+
 
     private void OnSettingChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -155,8 +200,6 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
 
         if (e.PropertyName == nameof(AppSettings.GlobalLogLevel))
             ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
-
-        SettingsPropertyChanged?.Invoke(this, e);
     }
 
     private static void ApplyLogLevel(LoggingLevelSwitch levelSwitch, string level)

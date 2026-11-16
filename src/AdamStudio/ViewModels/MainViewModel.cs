@@ -1,9 +1,8 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
+using AdamStudio.Core.AvalonDock.ViewModels;
 using AdamStudio.Core.Services;
 using AdamStudio.Core.Services.AvalonDock;
-using AdamStudio.Extensions;
 using AdamStudio.Factories;
 using AdamStudio.Messages;
 using AdamStudio.Services;
@@ -69,9 +68,9 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
 
     // --- Пробросы свойств для биндинга ---
 
-    public ObservableCollection<DocumentViewModelBase> Documents => mDockWindowService.Documents;
-    public DocumentViewModelBase? ActiveDocument => mDockWindowService.ActiveDocument;
-    public ObservableCollection<ToolViewModelBase> Anchorables => mToolboxService.Anchorables;
+    public ObservableCollection<AvalonDocumentViewModel> Documents => mDockWindowService.Documents;
+    public AvalonDocumentViewModel? ActiveDocument => mDockWindowService.ActiveDocument;
+    public ObservableCollection<AvalonToolViewModel> Anchorables => mToolboxService.Anchorables;
     public IReadOnlyList<ThemeInfo> AvailableThemes => mThemeService.AvailableThemes;
     public string? CurrentThemeName => mThemeService.CurrentTheme?.Name;
     
@@ -159,15 +158,14 @@ public sealed partial class MainViewModel : ObservableObject, IWindowLifecycleAw
     [RelayCommand(CanExecute = nameof(CanSaveOrClose))]
     private void SaveFile()
     {
-        if (ActiveDocument is EditorTabViewModel editor)
-            editor.SaveToFile();
+        ActiveDocument?.SaveToFile();
     }
 
     [RelayCommand(CanExecute = nameof(CanSaveOrClose))]
     private void CloseDocument()
     {
-        if (ActiveDocument is { } doc)
-            mDockWindowService.CloseDocument(doc);
+        if(ActiveDocument != null)
+            mDockWindowService.CloseDocument(ActiveDocument);
     }
 
     private bool CanSaveOrClose() => ActiveDocument is not null;

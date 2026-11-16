@@ -1,4 +1,4 @@
-﻿using AdamStudio.Core.AvalonDock.BaseViewModels;
+﻿using AdamStudio.Core.AvalonDock.ViewModels;
 using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
 using AdamStudio.Core.Services;
@@ -26,7 +26,6 @@ public sealed class PersistenceService : IPersistenceService
     private readonly IEditorTabViewModelFactory mEditorFactory;
     private readonly IDockWindowService mDockWindowService;
     private readonly ISettingsService mSettingsService;
-
     private readonly IServiceProvider mServiceProvider;
     private readonly ILogService<PersistenceService> mLoggerService;
 
@@ -108,7 +107,7 @@ public sealed class PersistenceService : IPersistenceService
 
         foreach (WorkspaceDocument d in state.Documents)
         {
-            DocumentViewModelBase? doc = null;
+            AvalonDocumentViewModel? doc = null;
 
             // Восстанавливаем в зависимости от типа
             if (d.DocumentTypeName == typeof(EditorTabViewModel).FullName)
@@ -156,7 +155,7 @@ public sealed class PersistenceService : IPersistenceService
                 {
                     mLoggerService.LogInformation($"Layout восстановлен: {LayoutFilePath}");
                     
-                    if (manager.ActiveContent is DocumentViewModelBase activeDoc)
+                    if (manager.ActiveContent is AvalonDocumentViewModel activeDoc)
                     {
                         mDockWindowService.ActivateDocument(activeDoc);
 
@@ -181,7 +180,9 @@ public sealed class PersistenceService : IPersistenceService
         
     }
 
-    /// <summary>Debounced сохранение layout — вызывать при каждом LayoutChanged.</summary>
+    /// <summary>
+    /// Debounced сохранение layout — вызывать при каждом LayoutChanged.
+    /// </summary>
     public void ScheduleLayoutSave()
     {
         Interlocked.Increment(ref mLayoutChangeCount);

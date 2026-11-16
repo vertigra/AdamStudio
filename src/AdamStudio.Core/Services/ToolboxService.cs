@@ -1,4 +1,4 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.AvalonDock.ViewModels;
 using AdamStudio.Core.AvalonDock.Services;
 using AvalonDock.Layout;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,12 +8,12 @@ namespace AdamStudio.Core.Services;
 
 public interface IToolboxService
 {
-    ObservableCollection<ToolViewModelBase> Anchorables { get; }
-    T Register<T>() where T : ToolViewModelBase;
-    T? Get<T>() where T : ToolViewModelBase;
-    void Toggle<T>() where T : ToolViewModelBase;
-    void Show<T>() where T : ToolViewModelBase;
-    void Hide<T>() where T : ToolViewModelBase;
+    ObservableCollection<AvalonToolViewModel> Anchorables { get; }
+    T Register<T>() where T : AvalonToolViewModel;
+    T? Get<T>() where T : AvalonToolViewModel;
+    void Toggle<T>() where T : AvalonToolViewModel;
+    void Show<T>() where T : AvalonToolViewModel;
+    void Hide<T>() where T : AvalonToolViewModel;
     void UpdateLastPositions();
 }
 
@@ -38,9 +38,9 @@ public sealed class ToolboxService : IToolboxService
         UpdateLastPositions();
     }
 
-    public ObservableCollection<ToolViewModelBase> Anchorables { get; } = [];
+    public ObservableCollection<AvalonToolViewModel> Anchorables { get; } = [];
 
-    public T Register<T>() where T : ToolViewModelBase
+    public T Register<T>() where T : AvalonToolViewModel
     {
         var toolbox = mServices.GetRequiredService<T>();
         if (!Anchorables.Contains(toolbox))
@@ -49,9 +49,9 @@ public sealed class ToolboxService : IToolboxService
         return toolbox;
     }
 
-    public T? Get<T>() where T : ToolViewModelBase => Anchorables.OfType<T>().FirstOrDefault();
+    public T? Get<T>() where T : AvalonToolViewModel => Anchorables.OfType<T>().FirstOrDefault();
 
-    public void Toggle<T>() where T : ToolViewModelBase
+    public void Toggle<T>() where T : AvalonToolViewModel
     {
         var toolbox = Get<T>();
         if (toolbox is null)
@@ -72,7 +72,7 @@ public sealed class ToolboxService : IToolboxService
             HideInternal(toolbox, anchorable);
     }
 
-    public void Show<T>() where T : ToolViewModelBase
+    public void Show<T>() where T : AvalonToolViewModel
     {
         var toolbox = Get<T>() ?? Register<T>();
         var anchorable = FindLayoutAnchorable(toolbox.ContentId);
@@ -81,7 +81,7 @@ public sealed class ToolboxService : IToolboxService
             ShowInternal(toolbox, anchorable);
     }
 
-    public void Hide<T>() where T : ToolViewModelBase
+    public void Hide<T>() where T : AvalonToolViewModel
     {
         var toolbox = Get<T>();
         if (toolbox is null) 
@@ -110,7 +110,7 @@ public sealed class ToolboxService : IToolboxService
     }
 
 
-    private void ShowInternal(ToolViewModelBase toolbox, LayoutAnchorable anchorable)
+    private void ShowInternal(AvalonToolViewModel toolbox, LayoutAnchorable anchorable)
     {
         // Сбрасываем PreviousContainer — не доверяем ему
         if (anchorable is ILayoutPreviousContainer prev)
@@ -129,7 +129,7 @@ public sealed class ToolboxService : IToolboxService
         anchorable.IsActive = true;
     }
 
-    private void HideInternal(ToolViewModelBase toolbox, LayoutAnchorable anchorable)
+    private void HideInternal(AvalonToolViewModel toolbox, LayoutAnchorable anchorable)
     {
         // Перед скрытием запоминаем текущую pane
         if (anchorable.Parent is LayoutAnchorablePane pane && pane.Root != null)
@@ -145,6 +145,6 @@ public sealed class ToolboxService : IToolboxService
 
         return manager.Layout?.Descendents()
             .OfType<LayoutAnchorable>()
-            .FirstOrDefault(a => a.Content is ToolViewModelBase vm && vm.ContentId == contentId);
+            .FirstOrDefault(a => a.Content is AvalonToolViewModel vm && vm.ContentId == contentId);
     }
 }

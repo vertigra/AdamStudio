@@ -1,9 +1,8 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
 using AdamStudio.Core.Services;
+using AdamStudio.Core.ViewModels;
 using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.IO;
-using System.Windows;
 
 namespace AdamStudio.ViewModels;
 
@@ -11,13 +10,13 @@ namespace AdamStudio.ViewModels;
 /// ViewModel вкладки документа. В классическом DockingManager (с DocumentsSource)
 /// это просто VM с INotifyPropertyChanged + свойства Title/Content/IsModified.
 /// </summary>
-public sealed partial class EditorTabViewModel : DocumentViewModelBase
+public sealed partial class EditorTabViewModel : BaseDocumentViewModel
 {
     private readonly IFileService mFileService;
     private readonly IDialogService mDialogService;
     private readonly ILogService<EditorTabViewModel> mLogService;
 
-    public EditorTabViewModel(IFileService fileService, IDialogService dialogService, ILogService<EditorTabViewModel> logService)
+    public EditorTabViewModel(IFileService fileService, IDialogService dialogService, ILogService<EditorTabViewModel> logService) : base(dialogService)
     {
         mFileService = fileService;
         mDialogService = dialogService;
@@ -58,19 +57,6 @@ public sealed partial class EditorTabViewModel : DocumentViewModelBase
             mLogService.LogError("Ошибка чтения файла", ex);
             mDialogService.ShowInformation($"Ошибка чтения файла: {ex.Message}", "Ошибка");
         }
-    }
-
-    public override bool ConfirmClose()
-    {
-        if (!IsModified) 
-            return true;
-
-        var result = mDialogService.ShowQuestion($"Сохранить изменения в «{Title}»?", "Несохранённые изменения");
-        
-        if (result == MessageBoxResult.Yes) 
-            return SaveToFile();
-
-        return result != MessageBoxResult.Cancel;
     }
 
     public override bool SaveToFile()

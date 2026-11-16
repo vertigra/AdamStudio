@@ -1,4 +1,4 @@
-using AdamStudio.Core.AvalonDock.BaseViewModels;
+using AdamStudio.Core.AvalonDock.ViewModels;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -16,10 +16,10 @@ public sealed class PanesStyleSelector : StyleSelector
 
     public override Style? SelectStyle(object item, DependencyObject container)
     {
-        if (item is ToolViewModelBase)
+        if (item is AvalonToolViewModel)
             return ToolboxStyle;
 
-        if (item is DocumentViewModelBase)
+        if (item is AvalonDocumentViewModel)
             return DocumentStyle;
 
         return base.SelectStyle(item, container);
