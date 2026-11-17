@@ -20,7 +20,7 @@ public sealed partial class OutputToolboxViewModel : BaseToolboxViewModel
     public OutputToolboxViewModel(ILogService<OutputToolboxViewModel> logService) : base("Вывод", nameof(OutputToolboxViewModel))
     {
         mLogService = logService;
-        PreferredSide = AnchorSide.Right;
+        PreferredSide = AnchorSide.Bottom;
     }
 
     public ObservableCollection<string> LogLines => mLogService.LogLines;

@@ -6,6 +6,7 @@ using Serilog.Events;
 using System.ComponentModel;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace AdamStudio.Core.Services;
 
@@ -19,24 +20,28 @@ public interface ISettingsService : INotifyPropertyChanged
     LoggingLevelSwitch GlobalLevelSwitch { get; }
     LoggingLevelSwitch OutputPanelSwitch { get; }
 
-    void Load();
+    /// <summary>
+    /// Загрузка настроек из файла
+    /// </summary>
+    /// <returns>Возвращает словарь непрочитанных полей в формате <ИмяПоля, Ошибка> </returns>
+    Dictionary<string, string> Load();
     void Save();
 }
 
 public sealed partial class SettingsService : ObservableObject, ISettingsService
 {
-    private bool mIsLoading;
+    private readonly Dictionary<string, string> mErrorConfigProperties = [];
 
+    /// <summary>
+    /// Загружает сервис с настройками по умолчанию, для загрузки настроек из файла следует использовать Load()
+    /// </summary>
     public SettingsService()
     {
-        SettingsDirectory = AppContext.BaseDirectory;
+        SettingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
         SettingsFileName = "appsettings.json";
         SettingsFilePath = Path.Combine(SettingsDirectory, SettingsFileName);
 
         Current.PropertyChanged += OnSettingChanged;
-        Load();
-
-        Log.Information("Test");
     }
 
     public string SettingsDirectory { get; }
@@ -47,51 +52,47 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
     public LoggingLevelSwitch GlobalLevelSwitch { get; } = new(LogEventLevel.Debug);
     public LoggingLevelSwitch OutputPanelSwitch { get; } = new(LogEventLevel.Information);
 
-    public void Load()
+
+
+    public Dictionary<string, string> Load()
     {
-        Log.Information("Load settings");
-
-        try
+        if (!File.Exists(SettingsFilePath))
         {
-            mIsLoading = true;
+            ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
+            ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
+            throw new FileLoadException("Settings file not found");
+        }
 
-            if (!File.Exists(SettingsFilePath))
-            {
-                ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
-                ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
-                return;
-            }
-                
+        using var stream = File.OpenRead(SettingsFilePath);
+        using var doc = JsonDocument.Parse(stream, mDocOptions);
 
-            var json = File.ReadAllText(SettingsFilePath);
-            using var doc = JsonDocument.Parse(json);
 
-            if (!doc.RootElement.TryGetProperty("App", out var app))
-                return;
+        if (doc.RootElement.TryGetProperty("App", out var app))
+        {
 
             var props = typeof(AppSettings).GetProperties();
 
-            foreach (var jsonProp in app.EnumerateObject())
+            foreach (JsonProperty jsonProp in app.EnumerateObject())
             {
-                var propInfo = props.FirstOrDefault(p => p.Name == jsonProp.Name);
-                if (propInfo != null)
+                PropertyInfo? propInfo = props.FirstOrDefault(p => p.Name == jsonProp.Name);
+
+                try
                 {
-                    var value = JsonSerializer.Deserialize(jsonProp.Value.GetRawText(), propInfo.PropertyType);
-                    propInfo.SetValue(Current, value);
+                    var value = jsonProp.Value.Deserialize(propInfo?.PropertyType ?? typeof(string), mSerializerOptions);
+                    propInfo?.SetValue(Current, value);
+                }
+                catch (Exception ex)
+                {
+
+                    mErrorConfigProperties.Add(jsonProp.Name, ex.Message);
                 }
             }
 
             ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
             ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "Ошибка загрузки настроек");
-        }
-        finally
-        {
-            mIsLoading = false;
-        }
+
+        return mErrorConfigProperties;
     }
 
     public void Save()
@@ -188,12 +189,21 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
         }
     }
 
+    private static readonly JsonDocumentOptions mDocOptions = new()
+    {
+        CommentHandling = JsonCommentHandling.Skip,
+        AllowTrailingCommas = true
+    };
 
+    private static readonly JsonSerializerOptions mSerializerOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     private void OnSettingChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (mIsLoading)
-            return;
+        //if (mIsLoading)
+        //    return;
 
         if (e.PropertyName == nameof(AppSettings.OutputLogLevel))
             ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);

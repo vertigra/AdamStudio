@@ -12,7 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Data;
 using System.Windows;
 
 namespace AdamStudio;
@@ -21,15 +24,30 @@ public partial class App : Application
 {
     private readonly IHost mHost;
     private readonly ObservableCollection<string> mUiLogLines = [];
+    private readonly Exception? mLoadException = null;
+    private readonly Dictionary<string, string> mErrorConfigProperties = [];
+
     public App()
     {
-        var settingsService = new SettingsService();
+        //Загружает сервис с настройками по умолчаниюю
+        SettingsService settingsService = new();
 
         // 1. Читаем конфигурацию из appsettings.json
+        //    Пути храняться в сервисе, и не меняются пользователем
         var configuration = new ConfigurationBuilder()
             .SetBasePath(settingsService.SettingsDirectory)
-            .AddJsonFile(settingsService.SettingsFileName, optional: false, reloadOnChange: true)
+            .AddJsonFile(settingsService.SettingsFileName, optional: true, reloadOnChange: true)
             .Build();
+
+        try
+        {
+            //пробуем загрузить настройки, ошибки при чтении получаем в массиве
+            mErrorConfigProperties = settingsService.Load();
+        }
+        catch(Exception ex)
+        {
+            mLoadException = ex;
+        }
 
         var settings = settingsService.Current;
 
@@ -47,11 +65,24 @@ public partial class App : Application
             .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
             .CreateLogger();
 
+        if(mLoadException != null)
+        {
+            Log.Error("Ошибка при загрузке настроек, используются настройки по умолчанию");
+            Log.Error(mLoadException.Message);
+        }
+
+        if (mErrorConfigProperties.Count > 0)
+        {
+            foreach (KeyValuePair<string, string> property in mErrorConfigProperties)
+            {
+                Log.Warning("Значение {propertyName} не прочитано, используются настройки по умолчанию", property.Key);
+                Log.Warning("Значение {propertyError} не прочитано, используются настройки по умолчанию", property.Value);
+            }
+        }
+
         mHost = Host.CreateDefaultBuilder()
             .ConfigureServices((_, services) =>
             {
-                //services.AddSingleton(sp => sp);
-
                 services.AddSingleton<ISettingsService>(settingsService);
                 services.AddSingleton<IConfiguration>(configuration);
 
