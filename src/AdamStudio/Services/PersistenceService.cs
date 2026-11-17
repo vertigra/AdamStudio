@@ -1,6 +1,6 @@
-﻿using AdamStudio.Core.AvalonDock.ViewModels;
-using AdamStudio.Core.AvalonDock.Model;
+﻿using AdamStudio.Core.AvalonDock.Model;
 using AdamStudio.Core.AvalonDock.Services;
+using AdamStudio.Core.AvalonDock.ViewModels;
 using AdamStudio.Core.Services;
 using AdamStudio.Factories;
 using AdamStudio.ViewModels;
@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.ComponentModel;
 using System.IO;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;

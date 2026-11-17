@@ -3,6 +3,7 @@ using AdamStudio.Core.Services;
 using AdamStudio.Core.ViewModels;
 using AdamStudio.Messages;
 using CommunityToolkit.Mvvm.Messaging;
+using System;
 using System.ComponentModel;
 
 namespace AdamStudio.ViewModels
@@ -13,10 +14,13 @@ namespace AdamStudio.ViewModels
 
         private readonly IDockWindowService mDockWindowService;
 
-        public SettingsViewModel(ISettingsService settingsService, IDockWindowService dockWindowService, IMessenger messenger, IDialogService dialogService) : base(dialogService)
+        private readonly ILogService<SettingsViewModel> mLogService;
+
+        public SettingsViewModel(ISettingsService settingsService, IDockWindowService dockWindowService, IMessenger messenger, ILogService<SettingsViewModel> logService, IDialogService dialogService) : base(dialogService)
         {
             SettingsService = settingsService;
             mDockWindowService = dockWindowService;
+            mLogService = logService;
 
             Title = "Настройки";
             ContentId = nameof(SettingsViewModel);
@@ -49,7 +53,16 @@ namespace AdamStudio.ViewModels
         /// </summary>
         public override bool SaveToFile()
         {
-            IsModified = false;
+            try
+            {
+                SettingsService.Save(); 
+                IsModified = false;
+            }
+            catch(Exception ex)
+            {
+                mLogService.LogError("Ошибка при сохранении настроек", ex);
+            }
+            
             return true;
         }
     }

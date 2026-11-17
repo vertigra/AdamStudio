@@ -60,7 +60,7 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
         {
             ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
             ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
-            throw new FileLoadException("Settings file not found");
+            throw new FileNotFoundException("Settings file not found", SettingsFilePath);
         }
 
         using var stream = File.OpenRead(SettingsFilePath);
