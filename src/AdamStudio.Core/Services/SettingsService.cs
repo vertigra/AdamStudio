@@ -52,10 +52,10 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
     public LoggingLevelSwitch GlobalLevelSwitch { get; } = new(LogEventLevel.Debug);
     public LoggingLevelSwitch OutputPanelSwitch { get; } = new(LogEventLevel.Information);
 
-
-
     public Dictionary<string, string> Load()
     {
+        mErrorConfigProperties.Clear();
+
         if (!File.Exists(SettingsFilePath))
         {
             ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
