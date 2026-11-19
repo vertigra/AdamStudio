@@ -27,11 +27,8 @@ public sealed class PersistenceService : IPersistenceService
     private readonly ISettingsService mSettingsService;
     private readonly IServiceProvider mServiceProvider;
     private readonly ILogService<PersistenceService> mLoggerService;
-
-    private static readonly string AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
-    private static readonly string WorkspaceFilePath = Path.Combine(AppDataDir, "workspace.json");
-    private static readonly string LayoutFilePath = Path.Combine(AppDataDir, "layout.xml");
-
+    private readonly string WorkspaceFilePath = string.Empty;
+    private readonly string LayoutFilePath = string.Empty;
     private int mLayoutChangeCount;
     private const int cSaveLayoutDelayMs = 500;
 
@@ -44,6 +41,7 @@ public sealed class PersistenceService : IPersistenceService
         ISettingsService settingsService,
         IDockWindowService dockWindowService,
         IServiceProvider serviceProvider,
+        IAppPathService appPathService,
         ILogService<PersistenceService> loggerService)
     {
         mDockingManager = managerProvider;
@@ -54,6 +52,9 @@ public sealed class PersistenceService : IPersistenceService
         mDockWindowService = dockWindowService;
         mServiceProvider = serviceProvider;
         mLoggerService = loggerService;
+
+        WorkspaceFilePath = appPathService.WorkspaceFilePath; 
+        LayoutFilePath = appPathService.LayoutFilePath;
 
         mSettingsService.Current.PropertyChanged += SettingsPropertyChanged;
         dockEventBinder.LayoutChanged += OnLayoutChanged;

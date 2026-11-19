@@ -7,7 +7,6 @@ using AdamStudio.Services;
 using AdamStudio.ViewModels;
 using AdamStudio.Views;
 using CommunityToolkit.Mvvm.Messaging;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -28,15 +27,16 @@ public partial class App : Application
 
     public App()
     {
+        AppPathService appPathService = new();
         //Загружает сервис с настройками по умолчаниюю
-        SettingsService settingsService = new();
+        SettingsService settingsService = new(appPathService);
 
         // 1. Читаем конфигурацию из appsettings.json
         //    Пути храняться в сервисе, и не меняются пользователем
-        var configuration = new ConfigurationBuilder()
+        /*var configuration = new ConfigurationBuilder()
             .SetBasePath(settingsService.SettingsDirectory)
             .AddJsonFile(settingsService.SettingsFileName, optional: true, reloadOnChange: true)
-            .Build();
+            .Build();*/
 
         try
         {
@@ -64,26 +64,30 @@ public partial class App : Application
             .WriteTo.ObservableSink(mUiLogLines, levelSwitch: settingsService.OutputPanelSwitch)
             .CreateLogger();
 
-        if(mLoadException != null)
+        if (settingsService.IsFirstRun)
         {
-            Log.Error("Ошибка при загрузке настроек, используются настройки по умолчанию");
-            Log.Error(mLoadException.Message);
+            Log.Information("Первый запуск: файл настроек не найден, создан со значениями по умолчанию");
+        }
+
+        if (mLoadException != null)
+        {
+            Log.Error(mLoadException, "Ошибка при загрузке настроек, используются настройки по умолчанию");
         }
 
         if (mErrorConfigProperties.Count > 0)
         {
             foreach (KeyValuePair<string, string> property in mErrorConfigProperties)
             {
-                Log.Warning("Значение {propertyName} не прочитано, используются настройки по умолчанию", property.Key);
-                Log.Warning("Значение {propertyError} не прочитано, используются настройки по умолчанию", property.Value);
+                Log.Warning("Настройка {propertyName} не прочитана: {propertyError}", property.Key, property.Value);
             }
         }
 
         mHost = Host.CreateDefaultBuilder()
             .ConfigureServices((_, services) =>
             {
+                services.AddSingleton<IAppPathService>(appPathService);
                 services.AddSingleton<ISettingsService>(settingsService);
-                services.AddSingleton<IConfiguration>(configuration);
+                //services.AddSingleton<IConfiguration>(configuration);
 
                 // Serilog.ILogger — глобальный логер
                 services.AddSingleton(Log.Logger);

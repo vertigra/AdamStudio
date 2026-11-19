@@ -12,10 +12,10 @@ namespace AdamStudio.Core.Services;
 
 public interface ISettingsService : INotifyPropertyChanged
 {
-    string SettingsDirectory { get; }
-    string SettingsFileName { get; }
-    string SettingsFilePath { get; }
-
+    /// <summary>
+    /// Первый запуск опеределяется по наличию файла настроек
+    /// </summary>
+    bool IsFirstRun { get; }
     AppSettings Current { get; }
     LoggingLevelSwitch GlobalLevelSwitch { get; }
     LoggingLevelSwitch OutputPanelSwitch { get; }
@@ -31,23 +31,18 @@ public interface ISettingsService : INotifyPropertyChanged
 public sealed partial class SettingsService : ObservableObject, ISettingsService
 {
     private readonly Dictionary<string, string> mErrorConfigProperties = [];
+    private readonly string mSettingsFilePath;
 
     /// <summary>
     /// Загружает сервис с настройками по умолчанию, для загрузки настроек из файла следует использовать Load()
     /// </summary>
-    public SettingsService()
+    public SettingsService(IAppPathService appPathService)
     {
-        SettingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "AdamStudio");
-        SettingsFileName = "appsettings.json";
-        SettingsFilePath = Path.Combine(SettingsDirectory, SettingsFileName);
-
+        mSettingsFilePath = appPathService.SettingsFilePath;
         Current.PropertyChanged += OnSettingChanged;
     }
 
-    public string SettingsDirectory { get; }
-    public string SettingsFileName { get; }
-    public string SettingsFilePath { get; }
-
+    public bool IsFirstRun { get; private set; }
     public AppSettings Current { get; } = new();
     public LoggingLevelSwitch GlobalLevelSwitch { get; } = new(LogEventLevel.Debug);
     public LoggingLevelSwitch OutputPanelSwitch { get; } = new(LogEventLevel.Information);
@@ -56,20 +51,23 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
     {
         mErrorConfigProperties.Clear();
 
-        if (!File.Exists(SettingsFilePath))
+        if (!File.Exists(mSettingsFilePath))
         {
+            IsFirstRun = true;
+
             ApplyLogLevel(OutputPanelSwitch, Current.OutputLogLevel);
             ApplyLogLevel(GlobalLevelSwitch, Current.GlobalLogLevel);
-            throw new FileNotFoundException("Settings file not found", SettingsFilePath);
+            Save();
+
+            return mErrorConfigProperties;
         }
 
-        using var stream = File.OpenRead(SettingsFilePath);
+        using var stream = File.OpenRead(mSettingsFilePath);
         using var doc = JsonDocument.Parse(stream, mDocOptions);
 
 
         if (doc.RootElement.TryGetProperty("App", out var app))
         {
-
             var props = typeof(AppSettings).GetProperties();
 
             foreach (JsonProperty jsonProp in app.EnumerateObject())
@@ -99,7 +97,7 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
     {
         try
         {
-            var tempFile = SettingsFilePath + ".tmp";
+            var tempFile = mSettingsFilePath + ".tmp";
 
             // Пишем напрямую в файловый поток без промежуточного MemoryStream и string
             using (var stream = new FileStream(tempFile, FileMode.Create, FileAccess.Write, FileShare.None))
@@ -132,7 +130,7 @@ public sealed partial class SettingsService : ObservableObject, ISettingsService
             } // Здесь автоматически сработает Dispose и Flush
 
             // Атомарная замена файла настроек (защита от повреждения файла при сбое)
-            File.Move(tempFile, SettingsFilePath, overwrite: true);
+            File.Move(tempFile, mSettingsFilePath, overwrite: true);
         }
         catch (Exception ex)
         {
